@@ -64,12 +64,20 @@ The default value is bsearch.
 II. Performance
 
 I decided to see how the above strategy would fare against flex. Not to put down
-flex in any way - flex is a really amazing tool. The results, however, were
-surprising.
+flex in any way - flex is a really amazing tool. That's why you'd want to
+compare against it. The results, however, are surprising considering how simple
+the lex_* implementations are in comparison.
 
 I measured a flex with compressed tables (the default), flex with full tables
 (the fastest option available, as far as I know), a lex-c lexer using binary
-search, and a lex-c lexer using ifs.
+search, and a lex-c lexer using ifs. The input is a subset of C single and multi
+character tokens, all 32 C keywords, integer constants, ids, and white space all
+shuffled in a 5.9 mb file. When compiled with optimizations, lex_* are always
+faster than default flex. On the i5 below, lex_ifs is consistently a bit faster
+than full flex. Without optimizations, lex_* tend to be close to compressed
+flex - slower on some systems, faster on others. All in all there appears to
+always be some lex_* and flex* combination with very similar performance on this
+type of basic input. 
 
 1. Length (at the time of writing):
 --------------------------------------------------------------------------------
@@ -94,11 +102,9 @@ implements its own input handling, so that makes sense. flex.full uses a lot
 more tables than vanilla flex.
 
 2. Timing:
-All lexers recognize the same subset of C tokens and read the same ~6mb file.
-Their outputs are the tokens from the file and are the same. All lexers read the
-file in 8kb chunks. The timing is done in silent mode, i.e. the lexers only
-process the file but do not output anything. The final value is the median out
-of 51 runs.
+All lexers read the file in 8kb chunks. The timing is done in silent mode, i.e.
+the lexers only process the file but do not output anything. The final value is
+the median out of 51 runs.
 
 2.1. Intel
 
@@ -111,21 +117,21 @@ No optimizations:
 $ ls -lh ./big_file.txt | awk '{print $5,$NF}'
 5.9M ./big_file.txt
 
-$ for n in $(seq 1 51); \
+for n in $(seq 1 51); \
 do ./flex.bin big_file.txt; done | sort -n -k1,1 | awk 'FNR==26'
-0.102926 sec
+0.104046 sec
 
-$ for n in $(seq 1 51); \
+for n in $(seq 1 51); \
 do ./flex.full.bin big_file.txt; done | sort -n -k1,1 | awk 'FNR==26'
-0.069550 sec
+0.070076 sec
 
-$ for n in $(seq 1 51); \
+for n in $(seq 1 51); \
 do ./lex_bsearch.bin big_file.txt; done | sort -n -k1,1 | awk 'FNR==26'
-0.122198 sec
+0.120465 sec
 
-$ for n in $(seq 1 51); \
+for n in $(seq 1 51); \
 do ./lex_ifs.bin big_file.txt; done | sort -n -k1,1 | awk 'FNR==26'
-0.111157 sec
+0.107832 sec
 --------------------------------------------------------------------------------
 Here lex_* are expected to be slower - each lexer operation is a function call
 and no functions have been inlined. Interestingly enough, though, they are still
@@ -137,25 +143,24 @@ everyone out of the water, which makes sense.
 $ ls -lh ./big_file.txt | awk '{print $5,$NF}'
 5.9M ./big_file.txt
 
-$ for n in $(seq 1 51); \
+for n in $(seq 1 51); \
 do ./flex.bin big_file.txt; done | sort -n -k1,1 | awk 'FNR==26'
-0.057977 sec
+0.062751 sec
 
-$ for n in $(seq 1 51); \
+for n in $(seq 1 51); \
 do ./flex.full.bin big_file.txt; done | sort -n -k1,1 | awk 'FNR==26'
-0.035101 sec
+0.035497 sec
 
-$ for n in $(seq 1 51); \
+for n in $(seq 1 51); \
 do ./lex_bsearch.bin big_file.txt; done | sort -n -k1,1 | awk 'FNR==26'
-0.037701 sec
+0.038186 sec
 
-$ for n in $(seq 1 51); \
+for n in $(seq 1 51); \
 do ./lex_ifs.bin big_file.txt; done | sort -n -k1,1 | awk 'FNR==26'
-0.032557 sec
+0.033569 sec
 --------------------------------------------------------------------------------
-This is where it gets interesting. lex_ifs is consistently faster than
-flex.full. Maybe flex gets slowed down by its input management, or allocates
-memory, or has some other overhead, but it's slower nonetheless.
+This is where it gets interesting. When running this tests, lex_ifs turns out
+consistently faster than flex.full.
 
 2.2. ARM (Raspberry PI 3B)
 
@@ -168,44 +173,44 @@ No optimizations:
 $ ls -lh ./big_file.txt | awk '{print $5,$NF}'
 5.9M ./big_file.txt
 
-$ for n in $(seq 1 51); \
+for n in $(seq 1 51); \
 do ./flex.bin big_file.txt; done | sort -n -k1,1 | awk 'FNR==26'
-0.760897 sec
+0.760643 sec
 
-$ for n in $(seq 1 51); \
+for n in $(seq 1 51); \
 do ./flex.full.bin big_file.txt; done | sort -n -k1,1 | awk 'FNR==26'
-0.371299 sec
+0.370465 sec
 
-$ for n in $(seq 1 51); \
+for n in $(seq 1 51); \
 do ./lex_bsearch.bin big_file.txt; done | sort -n -k1,1 | awk 'FNR==26'
-0.709154 sec
+0.707687 sec
 
-$ for n in $(seq 1 51); \
+for n in $(seq 1 51); \
 do ./lex_ifs.bin big_file.txt; done | sort -n -k1,1 | awk 'FNR==26'
-0.678215 sec
+0.673977 sec
 --------------------------------------------------------------------------------
-Interestingly, here compressed flex is the weakest one.
+Here compressed flex is the weakest one.
 
 -O3:
 --------------------------------------------------------------------------------
 $ ls -lh ./big_file.txt | awk '{print $5,$NF}'
 5.9M ./big_file.txt
 
-$ for n in $(seq 1 51); \
+for n in $(seq 1 51); \
 do ./flex.bin big_file.txt; done | sort -n -k1,1 | awk 'FNR==26'
-0.389540 sec
+0.384399 sec
 
-$ for n in $(seq 1 51); \
+for n in $(seq 1 51); \
 do ./flex.full.bin big_file.txt; done | sort -n -k1,1 | awk 'FNR==26'
-0.175352 sec
+0.172835 sec
 
-$ for n in $(seq 1 51); \
+for n in $(seq 1 51); \
 do ./lex_bsearch.bin big_file.txt; done | sort -n -k1,1 | awk 'FNR==26'
-0.220773 sec
+0.219725 sec
 
-$ for n in $(seq 1 51); \
+for n in $(seq 1 51); \
 do ./lex_ifs.bin big_file.txt; done | sort -n -k1,1 | awk 'FNR==26'
-0.192186 sec
+0.193642 sec
 --------------------------------------------------------------------------------
-And here lex_ifs is proportionately as slower than flex.full as it is faster on
-the i5. Compressed flex is still by far the slowest one.
+And here lex_ifs is about as slower than flex.full as it is faster on the i5.
+Compressed flex is still by far the slowest one.

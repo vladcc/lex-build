@@ -2,7 +2,7 @@ lex-build - a tokenizer generator
 
 Generates human readable lexers. Has a front end and back ends for different
 target languages. The lexers generated in C tend to be either faster than or
-comparable to flex (see the readme_lex-c.txt)
+comparable to flex. Details in readme_lex-c.txt.
 
 How to run:
 $ awk -f lex_lib.awk -f lex-first.awk src.txt | awk -f lex_lib.awk -f lex-c.awk
@@ -29,7 +29,7 @@ $ cd c-vs-flex/ && make -B all
 $ cd c-vs-flex/ && make -B awk
 
 More info:
-lex-build/readme_lex-first.txt - general framework, syntax, and front end description
+lex-build/readme_lex-first.txt - general framework, syntax, and front end doc
 lex-build/readme_lex-c.txt     - the C back end documentation
 lex-build/readme_lex-awk.txt   - the awk back end documentation
 lex-build/readme_proj.txt      - the project structure
