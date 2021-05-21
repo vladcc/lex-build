@@ -2,7 +2,7 @@
 
 # Author: Vladimir Dinev
 # vld.dinev@gmail.com
-# 2021-05-19
+# 2021-05-21
 
 # Generates a lexer in C. The lexing strategy is quite simple - the next token
 # is determined by switch-ing on the class of the current input character and
@@ -16,7 +16,7 @@
 
 # <script>
 function SCRIPT_NAME() {return "lex-c.awk"}
-function SCRIPT_VERSION() {return "1.0"}
+function SCRIPT_VERSION() {return "1.1"}
 # </script>
 
 # <out_signature>
@@ -44,57 +44,52 @@ function out_header() {
 function out_lex_cls_events_memb(    _set, _i, _end, _str) {
 	arr_make_set(_set, G_actions_arr, 2)
 
+	out_line("// return text input; when done return \"\", never NULL")
+	out_line("const char * lex_usr_get_input(void * usr_arg);")
+	out_line("// user events")
 	_end = arr_len(_set)
 	for(_i = 1; _i <= _end; ++_i) {
 		_str = _set[_i]
 		if (match(_str, "\\(\\)$")) {
 			gsub("\\(\\)", "", _str)
-			out_line(sprintf("cls_action %s;", _str))
+			out_line(sprintf("tok_id lex_usr_%s(lex_state * lex);", _str))
 		}
 	}
-	out_line("cls_action on_unknown_ch;")
+	out_line("tok_id lex_usr_on_unknown_ch(lex_state * lex);")
 }
-function out_lex_prereq(    _set, _i, _end, _str) {
-	out_line("typedef unsigned int uint;")
-	out_line("typedef const char * (*buff_in)(void * arg);")
-	out_line("typedef struct lex_io {")
+function out_lex_init_info(    _set, _i, _end, _str) {
+	out_line("typedef struct lex_init_info {")
 	tab_inc()
-	out_line("buff_in get_data; // return more input; "\
-		"return \"\" when done, never NULL")
-	out_line("void * usr_arg;   // the argument to get_data")
+	out_line("void * usr_arg;   // the argument to lex_usr_get_input()")
 	out_line("char * write_buff;   // lex_save_ch() saves here")
 	out_line("uint write_buff_len; // includes the '\\0'")
 	tab_dec()
-	out_line("} lex_io;")
+	out_line("} lex_init_info;")
 	out_line()
-	out_line("typedef struct lex_state lex_state;")
-	out_line("typedef tok_id (*cls_action)(lex_state * lex);") 
-	out_line("typedef struct lex_events {")
-	tab_inc()
-	out_lex_cls_events_memb()
-	tab_dec()
-	out_line("} lex_events;")
+	
 }
 function out_lex_define(    _set, _i, _end, _str) {
-	out_lex_prereq()
-	out_line();
+	out_line("typedef unsigned int uint;")
 	out_line("typedef struct lex_state {")
 	tab_inc()
 	out_line("const char * input;")
 	out_line("uint input_pos;")
-	out_line("uint input_line;")
 	out_line("int curr_ch;")
 	out_line("tok_id curr_tok;")
-	out_line("buff_in get_data;")
+	out_line("uint input_line;")
 	out_line("void * usr_arg;")
 	out_line("char * write_buff;")
 	out_line("uint write_buff_len;")
 	out_line("uint write_buff_pos;")
-	out_lex_cls_events_memb()
 	tab_dec()
 	out_line("} lex_state;")
 	out_line()
-
+	out_lex_init_info()
+	out_line("// <lex_usr_defined>")
+	out_lex_cls_events_memb()
+	out_line("// </lex_usr_defined>")
+	out_line()
+	
 	out_line("// read the next character, advance the input")
 	out_line("static inline int lex_read_ch(lex_state * lex)")
 	out_line("{")
@@ -103,7 +98,7 @@ function out_lex_define(    _set, _i, _end, _str) {
 	out_line("++lex->input_pos;")
 	out_line("if (!(*lex->input))")
 	tab_inc()
-	out_line("lex->input = lex->get_data(lex->usr_arg);")
+	out_line("lex->input = lex_usr_get_input(lex->usr_arg);")
 	tab_dec()
 	out_line("return lex->curr_ch;")
 	tab_dec()
@@ -170,32 +165,19 @@ function out_lex_define(    _set, _i, _end, _str) {
 	out_line("{return (lex->curr_tok == tok);}")
 	out_line()
 	
-	out_line(sprintf("%s lex_init(%s)",
-		"static inline void",
-		"lex_state * lex, lex_io * io, lex_events * events"))
+	out_line(sprintf("static inline void lex_init(%s)",
+		"lex_state * lex, lex_init_info * init"))
 	out_line("{")
 	tab_inc()
-	out_line("lex->get_data = io->get_data;")
-	out_line("lex->usr_arg = io->usr_arg;")
-	out_line("lex->input = lex->get_data(lex->usr_arg);")
+	out_line("lex->input = lex_usr_get_input(init->usr_arg);")
 	out_line("lex->input_pos = 0;")
-	out_line("lex->input_line = 1;")
 	out_line("lex->curr_ch = -1;")
 	out_line(sprintf("lex->curr_tok = %s;", TOK_ERR_ENUM()))
-	out_line("lex->write_buff = io->write_buff;")
-	out_line("lex->write_buff_len = io->write_buff_len;")
+	out_line("lex->input_line = 1;")
+	out_line("lex->usr_arg = init->usr_arg;")
+	out_line("lex->write_buff = init->write_buff;")
+	out_line("lex->write_buff_len = init->write_buff_len;")
 	out_line("lex->write_buff_pos = 0;")
-	
-	arr_make_set(_set, G_actions_arr, 2)
-	_end = arr_len(_set)
-	for(_i = 1; _i <= _end; ++_i) {
-		_str = _set[_i]
-		if (match(_str, "\\(\\)$")) {
-			gsub("\\(\\)", "", _str)
-			out_line(sprintf("lex->%s = events->%s;", _str, _str))
-		}
-	}
-	out_line("lex->on_unknown_ch = events->on_unknown_ch;")
 	tab_dec()
 	out_line("}")
 
@@ -579,7 +561,7 @@ _map_symb, _map_act, _tree, _tmp, _dont_go) {
 				# which has to take lex as an argument.
 				
 				sub("\\(\\)", "(lex)", _act)
-				out_line(sprintf("tok = lex->%s;", _act))
+				out_line(sprintf("tok = lex_usr_%s;", _act))
 			} else if (NEXT_CH() == _act) {
 				# Immediately jump back to the top of the loop on white space.
 				
@@ -622,7 +604,7 @@ _map_symb, _map_act, _tree, _tmp, _dont_go) {
 	tab_inc()
 	
 	# Called on weird input, e.g. an '@' character in a C file.
-	out_line("tok = lex->on_unknown_ch(lex);")
+	out_line("tok = lex_usr_on_unknown_ch(lex);")
 	out_line("goto done;")
 	tab_dec()
 	out_line("} break;")

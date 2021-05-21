@@ -1,2 +1,7 @@
 2021-05-20
 c-vs-flex/big_file.{zip,txt} is now shuffled. Minor edits on readmes.
+
+2021-05-21
+lex-c.awk v1.0 -> v1.1
+User callbacks are no longer implement through function pointers. They are now
+static functions provided on compile time.

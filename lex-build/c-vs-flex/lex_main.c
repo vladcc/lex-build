@@ -23,7 +23,7 @@ void init_tbl(char * tbl)
 	}
 }
 
-const char * get_data(void * arg)
+const char * lex_usr_get_input(void * arg)
 {
 	char * buff = (char *)arg;
 	int read = fread(buff, 1, BUFF_SZ, stdin);
@@ -31,7 +31,7 @@ const char * get_data(void * arg)
 	return buff;
 }
 
-tok_id get_word(lex_state * lex)
+tok_id lex_usr_get_word(lex_state * lex)
 {
 	lex_save_begin(lex);
 
@@ -50,7 +50,7 @@ tok_id get_word(lex_state * lex)
 	return lex_keyword_or_base(lex, ID);
 }
 
-tok_id get_number(lex_state * lex)
+tok_id lex_usr_get_number(lex_state * lex)
 {
 	lex_save_begin(lex);
 
@@ -69,7 +69,7 @@ tok_id get_number(lex_state * lex)
 	return NUM;
 }
 
-tok_id on_unknown_ch(lex_state * lex)
+tok_id lex_usr_on_unknown_ch(lex_state * lex)
 {
 	fprintf(stderr, "error: unknown char '%c' 0x%X; quitting\n",
 		lex_get_curr_ch(lex), (uint)lex_get_curr_ch(lex));
@@ -123,21 +123,14 @@ int main(int argc, char * argv[])
 		}
 	}
 	
-	lex_io lio = {
-		.get_data = get_data,
+	lex_init_info info = {
 		.usr_arg = file_buff,
 		.write_buff = tok_buff,
 		.write_buff_len = REAL_BSZ
 	};
-	
-	lex_events lev = {
-		.get_word = get_word,
-		.get_number = get_number,
-		.on_unknown_ch = on_unknown_ch
-	};
 
 	lex_state lex_, * lex = &lex_;
-	lex_init(lex, &lio, &lev);
+	lex_init(lex, &info);
 
 	if (argc > 2)
         output(lex);

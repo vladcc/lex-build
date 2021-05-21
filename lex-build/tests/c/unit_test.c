@@ -13,28 +13,17 @@ static ftest tests[] = {
 	test_lex,
 };
 
-const char * get_data(void * arg);
-tok_id get_word(lex_state * lex);
-tok_id get_number(lex_state * lex);
-tok_id on_unknown_ch(lex_state * lex);
 //------------------------------------------------------------------------------
 
 static void init_lex(lex_state * lex, char *** usr_arg)
 {
-	lex_io lio = {
-		.get_data = get_data,
+	lex_init_info info = {
 		.usr_arg = usr_arg,
 		.write_buff = g_save,
 		.write_buff_len = BUFF_SZ
 	};
 	
-	lex_events lev = {
-		.get_word = get_word,
-		.get_number = get_number,
-		.on_unknown_ch = on_unknown_ch
-	};
-	
-	lex_init(lex, &lio, &lev);
+	lex_init(lex, &info);
 }
 
 static bool test_lex(void)
@@ -217,12 +206,12 @@ void init_tbl(char * tbl)
 	}
 }
 
-const char * get_data(void * arg)
+const char * lex_usr_get_input(void * arg)
 {
 	return **((const char ***)arg);
 }
 
-tok_id get_word(lex_state * lex)
+tok_id lex_usr_get_word(lex_state * lex)
 {
 	lex_save_begin(lex);
 
@@ -241,7 +230,7 @@ tok_id get_word(lex_state * lex)
 	return lex_keyword_or_base(lex, TOK_ID);
 }
 
-tok_id get_number(lex_state * lex)
+tok_id lex_usr_get_number(lex_state * lex)
 {
 	lex_save_begin(lex);
 
@@ -260,7 +249,7 @@ tok_id get_number(lex_state * lex)
 	return TOK_NUMBER;
 }
 
-tok_id on_unknown_ch(lex_state * lex)
+tok_id lex_usr_on_unknown_ch(lex_state * lex)
 {
 	lex_save_begin(lex);
 	lex_save_ch(lex);
