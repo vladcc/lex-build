@@ -103,16 +103,6 @@ int main(int argc, char * argv[])
 	static char file_buff[REAL_BSZ];
 	init_tbl(base_tbl);
 
-	if (argc > 1)
-	{
-		const char * fname = argv[1];
-		if (!freopen(fname, "r", stdin))
-		{
-			fprintf(stderr, "error: can't open file '%s'\n", fname);
-			return -1;
-		}
-	}
-	
 	lex_init_info info = {
 		.usr_arg = file_buff,
 		.write_buff = tok_buff,
@@ -120,9 +110,22 @@ int main(int argc, char * argv[])
 	};
 
 	lex_state lex_, * lex = &lex_;
-	lex_init(lex, &info);
 	
-	output(lex);
+	if (argc > 1)
+	{
+		for (int i = 1; i < argc; ++i) {
+			const char * fname = argv[i];
+			if (!freopen(fname, "r", stdin))
+			{
+				fprintf(stderr, "lex-c-test: error: can't open file '%s'\n",
+					fname);
+				return -1;
+			}
+
+			lex_init(lex, &info);
+			output(lex);
+		}
+	}
  	
 	return 0;
 }

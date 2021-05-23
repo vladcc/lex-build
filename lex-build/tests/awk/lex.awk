@@ -1,6 +1,6 @@
 #!/bin/usr/awk -f
 
-function get_word() {
+function lex_usr_get_word() {
 	lex_save_init()
 	
 	while (1) {
@@ -17,7 +17,7 @@ function get_word() {
 	return ((!lex_is_saved_a_keyword()) ? G_CONST_tok_id : lex_get_saved())
 }
 
-function get_number() {
+function lex_usr_get_number() {
 	lex_save_init()
 	
 	while (1) {
@@ -33,13 +33,13 @@ function get_number() {
 	return G_CONST_tok_num
 }
 
-function on_unknown_ch() {
+function lex_usr_on_unknown_ch() {
 	print sprintf("error: line %d, pos %d: unknown char '%s'", 
 		lex_get_line_no(), lex_get_pos(), lex_curr_ch())
 	return TOK_ERROR()
 }
 
-function lex_get_line() {
+function lex_usr_get_line() {
 
 	G_getline_code = (getline G_current_line < get_file_name())
 	
@@ -55,19 +55,33 @@ function lex_get_line() {
 }
 
 function error_quit(msg) {
-	print sprintf("error: %s", msg) > "/dev/stderr"
+	print sprintf("lex.awk: error: %s", msg) > "/dev/stderr"
 	exit(1)
 }
 
-function process(    _tok) {
+function process(    _tok, _ccls, _ncls) {
 
 	lex_init()
-	
 	while ((_tok = lex_next()) != G_CONST_tok_eoi) {
 
-		# lex_match_tok() for code coverage
+		# code coverage
 		if (!lex_match_tok(lex_curr_tok()) || lex_match_tok(G_CONST_tok_eoi))
 			error_quit("token mismatch")
+
+		_ccls = lex_get_ch_cls(lex_curr_ch())
+		_ncls = lex_get_ch_cls(lex_peek_ch())
+
+		if (!lex_is_ch_cls(lex_curr_ch(), _ccls))
+			error_quit("class lookup is wrong")
+		
+		if (!lex_is_curr_ch_cls(_ccls))
+			error_quit("current char class mismatch")
+
+		if (!lex_is_next_ch_cls(_ncls))
+			error_quit("next char class mismatch")
+
+		if (G_CONST_tok_if == _tok && !lex_is_saved_a_keyword())
+			error_quit("keyword mismatch")
 		
 		if ((G_CONST_tok_id == _tok) || (G_CONST_tok_num == _tok)) {
 			print sprintf("'%s' '%s' line %d, pos %d",
@@ -89,6 +103,7 @@ function init() {
 	
 	G_CONST_ch_cls_word = CH_CLS_WORD()
 	G_CONST_ch_cls_num = CH_CLS_NUMBER()
+	G_CONST_tok_if = TOK_IF()
 	G_CONST_tok_id = TOK_ID()
 	G_CONST_tok_num = TOK_NUMBER()
 	G_CONST_tok_eoi = TOK_EOI()
@@ -96,10 +111,20 @@ function init() {
 	G_getline_code
 }
 
+function main(    _i, _fname) {
+	if (ARGC > 1) {
+		for (_i = 1; _i < ARGC; ++_i) {
+			_fname = ARGV[_i]
+			ARGV[_i] = ""
+			
+			set_file_name(_fname)
+			process()
+			close(get_file_name())
+		}
+	}
+}
+
 BEGIN {
 	init()
-	
-	set_file_name(ARGV[1])
-	process()
-	close(get_file_name())
+	main()
 }

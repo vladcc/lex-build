@@ -1,8 +1,9 @@
 # Common lex-build functionality
+# v1.01
 
 # Author: Vladimir Dinev
 # vld.dinev@gmail.com
-# 2021-05-19
+# 2021-05-23
 
 # <ascii>
 # Generates a map of the ascii table. Used to turn characters into number and
@@ -213,21 +214,21 @@ function ch_ptree_dump(tree,    _tmp) {
 # <lex_constants>
 # The constants used to generate and recognize automatically generated character
 # classes.
-
 function CH_CLS_AUTO_GEN() {return "CH_CLS_AUTO_%d_"}
 function CH_CLS_AUTO_RE() {return "CH_CLS_AUTO_[0-9]+_"}
 
 # Special actions. They can be values in the 'actions' table and their meaning
 # is determined by the writer of the lex-*.awk in accordance with its target
 # language.
-
 function NEXT_CH() {return "next_ch"}
 function NEXT_LINE() {return "next_line"}
 
 # Since a space character cannot exist literally in the input, it has to be
 # represented by an escape sequence.
-
 function CH_ESC_SPACE() {return "\\s"}
+
+# Use to check if an actions looks like a function call.
+function FCALL() {return "\\(\\)$"}
 # </lex_constants>
 
 # <base>
@@ -283,6 +284,9 @@ function print_help_common() {
 print "-vVersion=1 - print version info"
 print "-vHelp=1    - print this screen"
 }
+
+# Call this in on_begin(); produces an error if lex_lib.awk is not included.
+function lex_lib_is_included() {}
 
 BEGIN {lib_init(); on_begin()}
 $0 == CHAR_TBL(), $0 == END_() {on_char_tbl(); next}

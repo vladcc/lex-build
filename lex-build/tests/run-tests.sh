@@ -6,7 +6,7 @@ readonly G_TEST_CASES="base_case shuffled error"
 function make_input_name { echo "./test-data/${1}.txt"; }
 function make_accept_name { echo "./test-accept/${1}_accept.txt"; }
 
-function run_tests_on_data
+function run_tests_on_single_file
 {
 	local L_EXEC="$@"
 	local L_INPUT=""
@@ -14,12 +14,37 @@ function run_tests_on_data
 	
 	for test in $G_TEST_CASES; do
 		L_INPUT="$(make_input_name $test)"
-		L_ACCEPT="$(make_accept_name $test)"
-		
+		L_ACCEPT="$(make_accept_name $test)"	
 		eval_success "diff <($L_EXEC $L_INPUT) $L_ACCEPT"
 	done
 }
 
+function run_tests_on_multiple_files
+{
+	local L_EXEC="$@"
+	local L_INPUT=""
+	local L_ACCEPT=""
+	
+	for test in $G_TEST_CASES; do
+		L_INPUT="$(make_input_name $test)"
+		L_ACCEPT="$(make_accept_name $test)"	
+		eval_success "diff <($L_EXEC $L_INPUT $L_INPUT) "\
+		"<(cat $L_ACCEPT $L_ACCEPT)"
+	done
+}
+
+function run_test_version_info
+{
+	local L_LEX="../$1"
+	local L_VER="$2"
+	eval_success "diff <(awk -f ../lex_lib.awk -f $L_LEX -vVersion=1) "\
+	"<(echo \"$L_VER\")"
+}
+function run_test_lex_lib_inc
+{
+	local L_LEX="../$1"
+	eval_success "awk -f $L_LEX 2>&1 | grep lex_lib_is_included > /dev/null"
+}
 function gen_lex { bt_eval "bash ./generate-lex.sh > /dev/null"; }
 
 function eval_success
@@ -32,11 +57,28 @@ function clean_up { bt_eval c_clean; }
 # </misc>
 
 # <awk>
-function test_awk
+function awk_test_ver
+{
+	run_test_version_info "lex-awk.awk" "lex-awk.awk 1.01"
+}
+function awk_test_lex_lib_inc
+{
+	run_test_lex_lib_inc "lex-awk.awk"
+}
+function awk_run_test
 {
 	for lexer in $G_C_LEXERS; do
-		bt_eval run_tests_on_data "awk -f ./awk/lex.awk -f ./awk/inc_lex.awk"
+		bt_eval run_tests_on_single_file "awk -f ./awk/lex.awk -f "\
+		"./awk/inc_lex.awk"
+		bt_eval run_tests_on_multiple_files "awk -f ./awk/lex.awk -f "\
+		"./awk/inc_lex.awk"
 	done
+}
+function test_awk
+{
+	bt_eval awk_test_lex_lib_inc
+	bt_eval awk_test_ver
+	bt_eval awk_run_test
 }
 # </awk>
 
@@ -54,18 +96,28 @@ function c_compile_lex
 			"gcc ./c/${lexer}.c ./c/unit_test.c -o ${lexer}_unit_test.bin -Wall"
 	done
 }
-
 function c_run_tests
 {
 	for lexer in $G_C_LEXERS; do
-		bt_eval run_tests_on_data "./${lexer}0.bin"
-		bt_eval run_tests_on_data "./${lexer}3.bin"
+		bt_eval run_tests_on_single_file "./${lexer}0.bin"
+		bt_eval run_tests_on_multiple_files "./${lexer}0.bin"
+		bt_eval run_tests_on_single_file "./${lexer}3.bin"
+		bt_eval run_tests_on_multiple_files "./${lexer}3.bin"
 		eval_success "./${lexer}_unit_test.bin"
 	done
 }
-
+function c_test_lex_lib_inc
+{
+	run_test_lex_lib_inc "lex-c.awk"
+}
+function c_test_ver
+{
+	run_test_version_info "lex-c.awk" "lex-c.awk 1.11"
+}
 function test_c
 {
+	bt_eval c_test_lex_lib_inc
+	bt_eval c_test_ver
 	bt_eval c_compile_lex
 	bt_eval c_run_tests
 	bt_eval clean_up

@@ -3,10 +3,13 @@ lex-awk.awk -- lex-build back end for awk
 I. AWK Lexer Overview
 
 The strategy for this lexer is character classification. It chooses table
-look-up over regex. The user provides a lex_get_line() function, which returns
-the next line of input, as well as any custom action callbacks. Reading patterns
-is done by the user, character by character, pretty much like you would in C.
-This gives you the same level of flexibility as you'd have in C.
+look-up over regex. The user provides all lex_usr_*() functions specified by the
+comments at the beginning of the generated file. Two of them have to always
+exist: lex_usr_get_line(), and lex_usr_on_unknown_ch(). They return the next
+input line and perform an action when an unknown character is encountered,
+respectively. Each function call action becomes a lex_usr_*() function as well.
+Reading patterns is done by the user, character by character, pretty much like
+you would in C. This provides the same level of flexibility as you'd have in C.
 
 
 II. Performance

@@ -2,7 +2,7 @@
 
 # Author: Vladimir Dinev
 # vld.dinev@gmail.com
-# 2021-05-21
+# 2021-05-23
 
 # Generates a lexer in C. The lexing strategy is quite simple - the next token
 # is determined by switch-ing on the class of the current input character and
@@ -16,7 +16,7 @@
 
 # <script>
 function SCRIPT_NAME() {return "lex-c.awk"}
-function SCRIPT_VERSION() {return "1.1"}
+function SCRIPT_VERSION() {return "1.11"}
 # </script>
 
 # <out_signature>
@@ -50,8 +50,8 @@ function out_lex_cls_events_memb(    _set, _i, _end, _str) {
 	_end = arr_len(_set)
 	for(_i = 1; _i <= _end; ++_i) {
 		_str = _set[_i]
-		if (match(_str, "\\(\\)$")) {
-			gsub("\\(\\)", "", _str)
+		if (match(_str, FCALL())) {
+			sub(FCALL(), "", _str)
 			out_line(sprintf("tok_id lex_usr_%s(lex_state * lex);", _str))
 		}
 	}
@@ -556,11 +556,11 @@ _map_symb, _map_act, _tree, _tmp, _dont_go) {
 		
 		if (_cls in _map_act) {
 			_act = _map_act[_cls]
-			if (match(_act, "\\(\\)$")) {
+			if (match(_act, FCALL())) {
 				# If the action ends in (), then it's a user defined callback,
 				# which has to take lex as an argument.
 				
-				sub("\\(\\)", "(lex)", _act)
+				sub(FCALL(), "(lex)", _act)
 				out_line(sprintf("tok = lex_usr_%s;", _act))
 			} else if (NEXT_CH() == _act) {
 				# Immediately jump back to the top of the loop on white space.
@@ -970,8 +970,9 @@ function err_quit(msg) {
 function on_help() {
 print sprintf("%s -- lex-build C back end", SCRIPT_NAME())
 print ""
-print "Macros are replaced with static inline header functions, hence compiling"
-print "with optimizations makes a huge difference."
+print "Static inline functions are preferred over macros, hence compiling with"
+print "optimizations would make a significant difference. The user implements"
+print "lex_usr_*()"
 print ""
 print "Options:"
 print sprintf("-vKeywords=%s/%s - specifies the keyword lookup method.",
@@ -991,6 +992,8 @@ print sprintf("%s %s", SCRIPT_NAME(), SCRIPT_VERSION())
 }
 
 function on_begin() {
+	lex_lib_is_included()
+	
 	arr_init(G_char_tbl_arr)
 	arr_init(G_symbols_arr)
 	arr_init(G_keywords_arr)
@@ -1010,4 +1013,7 @@ function on_keywords() {save_to(G_keywords_arr)}
 function on_patterns() {save_to(G_patterns_arr)}
 function on_actions()  {save_to(G_actions_arr)}
 function on_end()      {generate()}
+
+# Produce an error if lex_lib.awk is not included
+BEGIN {lex_lib_is_included()}
 # </misc>

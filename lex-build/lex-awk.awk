@@ -2,7 +2,7 @@
 
 # Author: Vladimir Dinev
 # vld.dinev@gmail.com
-# 2021-05-19
+# 2021-05-23
 
 # Generates a lexer in awk. It determines the next token by branching on the
 # character class of the current input character, and then branches on the next
@@ -11,7 +11,7 @@
 
 # <script>
 function SCRIPT_NAME() {return "lex-awk.awk"}
-function SCRIPT_VERSION() {return "1.0"}
+function SCRIPT_VERSION() {return "1.01"}
 # </script>
 
 # <out_signature>
@@ -129,7 +129,7 @@ function out_kwds(    _set, _i, _end) {
 	
 	_end = arr_len(_set)
 	for (_i = 1; _i <= _end; ++_i)
-		out_line(sprintf("_B_lex_keywords[\"%s\"] = 1", _set[_i]))
+		out_line(sprintf("_B_lex_keywords_tbl[\"%s\"] = 1", _set[_i]))
 	
 	tab_dec()
 	out_line("}")
@@ -138,7 +138,7 @@ function out_kwds(    _set, _i, _end) {
 
 # <out_input>
 function LEX_NEXT_LINE() {
-	return "split(lex_get_line(), _B_lex_input_line, \"\")"
+	return "split(lex_usr_get_line(), _B_lex_input_line, \"\")"
 }
 function out_lex_io() {
 	# Generates the lexer public interface.
@@ -146,7 +146,7 @@ function out_lex_io() {
 	out_line("# read the next character; advance the input")
 	out_line("function lex_read_ch() {")
 	tab_inc()
-	out_line("# Note: the user defines lex_get_line()")
+	out_line("# Note: the user defines lex_usr_get_line()")
 	out_line()
 	out_line("_B_lex_curr_ch = (_B_lex_input_line[_B_lex_line_pos++] \"\")")
 	out_line("_B_lex_peek_ch = (_B_lex_input_line[_B_lex_line_pos] \"\")")
@@ -190,18 +190,18 @@ function out_lex_io() {
 	out_line("# return the saved string")
 	out_line("function lex_get_saved() {return _B_lex_saved}")
 	out_line()
-	out_line("# check if a character is of a particular class")
+	out_line("# character classes")
 	out_line("function lex_is_ch_cls(ch, cls) "\
 		"{return (cls == _B_lex_ch_tbl[ch])}")
-	out_line()
-	out_line("# see if the next character in the input is of a particular "\
-		"class")
+	out_line("function lex_is_curr_ch_cls(cls) "\
+		"{return (cls == _B_lex_ch_tbl[_B_lex_curr_ch])}")
 	out_line("function lex_is_next_ch_cls(cls) "\
 		"{return (cls == _B_lex_ch_tbl[_B_lex_peek_ch])}")
+	out_line("function lex_get_ch_cls(ch) {return _B_lex_ch_tbl[ch]}")
 	out_line()
 	out_line("# see if what's in the lexer's write space is a keyword")
 	out_line("function lex_is_saved_a_keyword() {"\
-		"return (_B_lex_saved in _B_lex_keywords)}")
+		"return (_B_lex_saved in _B_lex_keywords_tbl)}")
 }
 # </out_input>
 
@@ -253,6 +253,7 @@ _map_symb, _map_act, _tree, _tmp) {
 	out_line("# return the next token; constants are inlined for performance")
 	out_line("function lex_next() {")
 	tab_inc()
+	out_line(sprintf("_B_lex_curr_tok = \"%s\"", TOK_ERR()))
 	out_line("while (1) {")
 	tab_inc()
 
@@ -295,11 +296,10 @@ _map_symb, _map_act, _tree, _tmp) {
 		
 		if (_cls in _map_act) {
 			_act = _map_act[_cls]
-			if (match(_act, "\\(\\)$")) {
+			if (match(_act, FCALL())) {
 				# Any action which ends in '()' is assumed to be a callback.
 			
-				sub("\\(\\)", "()", _act)
-				out_line(sprintf("_B_lex_curr_tok = %s", _act))
+				out_line(sprintf("_B_lex_curr_tok = lex_usr_%s", _act))
 			} else if (NEXT_CH() == _act) {
 				# Back to the top on white space.
 				
@@ -335,7 +335,7 @@ _map_symb, _map_act, _tree, _tmp) {
 	}
 	print "else {"
 	tab_inc()
-	out_line("_B_lex_curr_tok = on_unknown_ch()")
+	out_line("_B_lex_curr_tok = lex_usr_on_unknown_ch()")
 	tab_dec()
 	out_line("}")
 	out_line("break")
@@ -350,15 +350,26 @@ _map_symb, _map_act, _tree, _tmp) {
 # </out_lex_next>
 
 # <out_init>
-function out_init() {
+function out_init() {	
 	out_line("# call this first")
 	out_line("function lex_init() {")
 	tab_inc()
+	out_line("# '_B' variables are 'bound' to the lexer, i.e. 'private'")
+	out_line("if (!_B_lex_are_tables_init) {")
+	tab_inc()
 	out_line("_lex_init_ch_tbl()")
 	out_line("_lex_init_keywords()")
+	out_line("_B_lex_are_tables_init = 1")
+	tab_dec()
+	out_line("}")
+	out_line("_B_lex_curr_ch = \"\"")
+	out_line("_B_lex_curr_ch_cls_cache = \"\"")
+	out_line(sprintf("_B_lex_curr_tok = \"%s\"", TOK_ERR()))
 	out_line("_B_lex_line_no = 1")
 	out_line("_B_lex_line_pos = 1")
-	out_line(sprintf("_B_lex_curr_tok = \"%s\"", TOK_ERR()))
+	out_line("_B_lex_peek_ch = \"\"")
+	out_line("_B_lex_peeked_ch_cache = \"\"")
+	out_line("_B_lex_saved = \"\"")
 	out_line(LEX_NEXT_LINE())
 	tab_dec()
 	out_line("}")
@@ -382,9 +393,27 @@ function out_private() {
 	out_kwds()
 	out_init_ch_tbl()
 }
+function out_info(    _i, _end, _set, _str) {
+print "# <lex_usr_defined>"
+print "# The user implements the following:"
+print "# lex_usr_get_line()"
+print "# lex_usr_on_unknown_ch()"
+
+	arr_make_set(_set, G_actions_arr, 2)
+	_end = arr_len(_set)
+	for (_i = 1; _i <= _end; ++_i) {
+		_str = _set[_i]
+		if (match(_str, FCALL()))
+			print sprintf("# lex_usr_%s", _str)
+	}
+
+print "# </lex_usr_defined>"
+}
 function generate() {
 	out_line("# <lex_awk>")
 	out_signature()
+	out_line()
+	out_info()
 	out_line()
 	out_line("# <lex_public>")
 	out_public()
@@ -409,8 +438,11 @@ function ch_cls_to_const_map_get(ch_cls) {
 function on_help() {
 print sprintf("%s -- lex-build awk back end", SCRIPT_NAME())
 print ""
-print "Classifies characters by table lookup rather than regex. lex_get_line()"
-print "has to be implemented by the user to return the next line of input."
+print "Classifies characters by table lookup rather than regex. "\
+"lex_usr_*() are"
+print "implemented by the user; lex_usr_get_line() returns the next line of "\
+"input"
+print "to the lexer. '\\n' may need to be appended if new lines are meaningful."
 print ""
 print "Options:"
 # Only common
@@ -433,4 +465,7 @@ function on_keywords() {save_to(G_keywords_arr)}
 function on_patterns() {save_to(G_patterns_arr)}
 function on_actions()  {save_to(G_actions_arr)}
 function on_end()      {generate()}
+
+# Produce an error if lex_lib.awk is not included
+BEGIN {lex_lib_is_included()}
 # </misc>

@@ -25,11 +25,12 @@ numbers and identifiers.
 
 3. Callbacks for each specified function action from the lexer's input
 description. E.g. if you want to read an identifier when the lexer encounters
-a letter, the user provides a pointer to a function which uses lex_read_ch(),
-lex_peek_ch(), lex_save*(), etc. to save all consecutive letters in the lexer
-write buffer.
+a letter, the user provides a function which uses lex_read_ch(), lex_peek_ch(),
+lex_save*(), etc. to save all consecutive letters in the lexer write buffer.
 
-4. A callback which gets called when the lexer encounters an unknown character.
+4. A function which gets called when the lexer encounters an unknown character.
+
+All functions which have to be provided by the user have a 'lex_usr_' prefix.
 
 The actual lexing revolves around two functions:
 lex_next(), which returns the next token from the input, and
