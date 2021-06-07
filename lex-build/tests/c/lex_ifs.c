@@ -24,7 +24,7 @@ const char * lex_tok_to_str(tok_id tok)
 
 enum char_cls {
 CH_CLS_SPACE = 1,   CH_CLS_WORD,        CH_CLS_NUMBER,      CH_CLS_LESS_THAN,   
-CH_CLS_GREATER_THAN,CH_CLS_NEW_LINE,    CH_CLS_EOI,         CH_CLS_AUTO_1_,     
+CH_CLS_GRTR_THAN,   CH_CLS_NEW_LINE,    CH_CLS_EOI,         CH_CLS_AUTO_1_,     
 CH_CLS_AUTO_2_,     
 };
 
@@ -47,7 +47,7 @@ static const byte char_cls_tbl[CHAR_TBL_SZ] = {
 /* 056 0x38 '8' */ CH_CLS_NUMBER,   /* 057 0x39 '9' */ CH_CLS_NUMBER,   
 0, 0, 
 /* 060 0x3C '<' */ CH_CLS_LESS_THAN, /* 061 0x3D '=' */ CH_CLS_AUTO_1_,  
-/* 062 0x3E '>' */ CH_CLS_GREATER_THAN, 
+/* 062 0x3E '>' */ CH_CLS_GRTR_THAN, 
 0, 0, 
 /* 065 0x41 'A' */ CH_CLS_WORD,     /* 066 0x42 'B' */ CH_CLS_WORD,     
 /* 067 0x43 'C' */ CH_CLS_WORD,     /* 068 0x44 'D' */ CH_CLS_WORD,     
@@ -114,7 +114,7 @@ tok_id lex_next(lex_state * lex)
 				}
 				goto done;
 			} break;
-			case CH_CLS_GREATER_THAN:
+			case CH_CLS_GRTR_THAN:
 			{
 				tok = TOK_GT;
 				if ('=' == lex_peek_ch(lex))

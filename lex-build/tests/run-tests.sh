@@ -59,7 +59,7 @@ function clean_up { bt_eval c_clean; }
 # <awk>
 function awk_test_ver
 {
-	run_test_version_info "lex-awk.awk" "lex-awk.awk 1.01"
+	run_test_version_info "lex-awk.awk" "lex-awk.awk 1.2"
 }
 function awk_test_lex_lib_inc
 {
@@ -67,11 +67,13 @@ function awk_test_lex_lib_inc
 }
 function awk_run_test
 {
+	local L_LEX="awk -f ./awk/lex.awk -f ./awk/inc_lex.awk"
+	local L_LEX_PREF="awk -f ./awk/foo-lex.awk -f ./awk/foo_inc_lex.awk"
 	for lexer in $G_C_LEXERS; do
-		bt_eval run_tests_on_single_file "awk -f ./awk/lex.awk -f "\
-		"./awk/inc_lex.awk"
-		bt_eval run_tests_on_multiple_files "awk -f ./awk/lex.awk -f "\
-		"./awk/inc_lex.awk"
+		bt_eval run_tests_on_single_file "$L_LEX"
+		bt_eval run_tests_on_multiple_files "$L_LEX"
+		bt_eval run_tests_on_single_file "$L_LEX_PREF"
+		bt_eval run_tests_on_multiple_files "$L_LEX_PREF"
 	done
 }
 function test_awk

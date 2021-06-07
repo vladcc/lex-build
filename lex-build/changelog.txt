@@ -25,3 +25,7 @@
 
 	run-tests.sh:
 	Version info, lex_lib_is_included(), and multiple file i/o tests added.
+
+2021-06-07
+	lex-awk.awk v1.0 -> v1.2:
+	-vNamePrefix added with 'foo_' prefix tests.
