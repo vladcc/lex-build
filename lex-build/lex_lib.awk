@@ -250,6 +250,27 @@ function is_range_word(str) {
 	KEYWORDS() == str || PATTERNS() == str || ACTIONS() == str) 
 }
 
+function npref_constants(arr, ind, pref,    _i, _end, _arr, _str) {
+# Call this to prefix all constants saved in arr. Note that 'ind' is the index
+# in the sub array, as per the usual save_to(), join(), unjoin() structure.
+
+	if (ind != 1 && ind != 2)
+		return
+
+	pref = toupper(pref)
+
+	_end = arr_len(arr)
+	for (_i = 1; _i <= _end; ++_i) {
+		_str = arr[_i]
+
+		unjoin(_arr, _str)
+		if (is_constant(_arr[ind]))
+			_arr[ind] = (pref _arr[ind])
+
+		arr[_i] = join(_arr[1], _arr[2])
+	}
+}
+
 # The input delimiters.
 function END_()     {return "end"}
 function CHAR_TBL() {return "char_tbl"}

@@ -2,7 +2,7 @@
 
 # Author: Vladimir Dinev
 # vld.dinev@gmail.com
-# 2021-05-23
+# 2021-06-08
 
 # Generates a lexer in C. The lexing strategy is quite simple - the next token
 # is determined by switch-ing on the class of the current input character and
@@ -16,7 +16,7 @@
 
 # <script>
 function SCRIPT_NAME() {return "lex-c.awk"}
-function SCRIPT_VERSION() {return "1.11"}
+function SCRIPT_VERSION() {return "1.2"}
 # </script>
 
 # <out_signature>
@@ -25,12 +25,39 @@ function out_signature() {
 }
 # </out_signature>
 
+# <constant_names>
+function N_LEX_GET_CURR_CH() {return npref("lex_get_curr_ch")}
+function N_LEX_GET_CURR_TOK() {return npref("lex_get_curr_tok")}
+function N_LEX_GET_INPUT_LINE_NO() {return npref("lex_get_input_line_no")}
+function N_LEX_GET_INPUT_POS() {return npref("lex_get_input_pos")}
+function N_LEX_GET_SAVED() {return npref("lex_get_saved")}
+function N_LEX_GET_SAVED_LEN() {return npref("lex_get_saved_len")}
+function N_LEX_GET_USR_ARG() {return npref("lex_get_usr_arg")}
+function N_LEX_INIT() {return npref("lex_init")}
+function N_LEX_MATCH() {return npref("lex_match")}
+function N_LEX_NEXT() {return npref("lex_next")}
+function N_LEX_PEEK_CH() {return npref("lex_peek_ch")}
+function N_LEX_READ_CH() {return npref("lex_read_ch")}
+function N_LEX_SAVE_BEGIN() {return npref("lex_save_begin")}
+function N_LEX_SAVE_CH() {return npref("lex_save_ch")}
+function N_LEX_SAVE_END() {return npref("lex_save_end")}
+function N_LEX_STATE() {return npref("lex_state")}
+function N_LEX_TOK_TO_STR() {return npref("lex_tok_to_str")}
+function N_LEX_USR_GET_INPUT() {return npref("lex_usr_get_input")}
+function N_LEX_USR_ON_UNKNOWN_CH() {return npref("lex_usr_on_unknown_ch")}
+function N_LEX_INIT_INFO() {return npref("lex_init_info")}
+function N_TOK_ID() {return npref("tok_id")}
+function N_LEX_KEYWORD_OR_BASE() {return npref("lex_keyword_or_base")}
+function N_CHAR_CLS() {return npref("char_cls")}
+# </constant_names>
+
 # <out_header>
-function out_header() {
+function out_header(    _hdr) {
+	_hdr = toupper(npref_get() "LEX_H")
 	out_line("// <lex_header>")
 	out_signature()
-	out_line("#ifndef LEX_H")
-	out_line("#define LEX_H")
+	out_line(sprintf("#ifndef %s", _hdr))
+	out_line(sprintf("#define %s", _hdr))
 	out_line()
 	out_line("#include <stdbool.h>")
 	out_line()
@@ -45,44 +72,48 @@ function out_lex_cls_events_memb(    _set, _i, _end, _str) {
 	arr_make_set(_set, G_actions_arr, 2)
 
 	out_line("// return text input; when done return \"\", never NULL")
-	out_line("const char * lex_usr_get_input(void * usr_arg);")
+	out_line(sprintf("const char * %s(void * usr_arg);", N_LEX_USR_GET_INPUT()))
 	out_line("// user events")
 	_end = arr_len(_set)
 	for(_i = 1; _i <= _end; ++_i) {
 		_str = _set[_i]
 		if (match(_str, FCALL())) {
 			sub(FCALL(), "", _str)
-			out_line(sprintf("tok_id lex_usr_%s(lex_state * lex);", _str))
+			out_line(sprintf("%s %s(%s * lex);",
+				N_TOK_ID(), npref("lex_usr_" _str), N_LEX_STATE()))
 		}
 	}
-	out_line("tok_id lex_usr_on_unknown_ch(lex_state * lex);")
+	out_line(sprintf("%s %s(%s * lex);",
+		N_TOK_ID(), N_LEX_USR_ON_UNKNOWN_CH(), N_LEX_STATE()))
 }
 function out_lex_init_info(    _set, _i, _end, _str) {
-	out_line("typedef struct lex_init_info {")
+	out_line(sprintf("typedef struct %s {", N_LEX_INIT_INFO()))
 	tab_inc()
-	out_line("void * usr_arg;   // the argument to lex_usr_get_input()")
-	out_line("char * write_buff;   // lex_save_ch() saves here")
+	out_line(sprintf("void * usr_arg;   // the argument to %s()",
+		N_LEX_USR_GET_INPUT()))
+	out_line(sprintf("char * write_buff;   // %s() saves here",
+		N_LEX_SAVE_CH()))
 	out_line("uint write_buff_len; // includes the '\\0'")
 	tab_dec()
-	out_line("} lex_init_info;")
+	out_line(sprintf("} %s;", N_LEX_INIT_INFO()))
 	out_line()
 	
 }
 function out_lex_define(    _set, _i, _end, _str) {
 	out_line("typedef unsigned int uint;")
-	out_line("typedef struct lex_state {")
+	out_line(sprintf("typedef struct %s {", N_LEX_STATE()))
 	tab_inc()
 	out_line("const char * input;")
 	out_line("uint input_pos;")
 	out_line("int curr_ch;")
-	out_line("tok_id curr_tok;")
+	out_line(sprintf("%s curr_tok;", N_TOK_ID()))
 	out_line("uint input_line;")
 	out_line("void * usr_arg;")
 	out_line("char * write_buff;")
 	out_line("uint write_buff_len;")
 	out_line("uint write_buff_pos;")
 	tab_dec()
-	out_line("} lex_state;")
+	out_line(sprintf("} %s;", N_LEX_STATE()))
 	out_line()
 	out_lex_init_info()
 	out_line("// <lex_usr_defined>")
@@ -91,14 +122,15 @@ function out_lex_define(    _set, _i, _end, _str) {
 	out_line()
 	
 	out_line("// read the next character, advance the input")
-	out_line("static inline int lex_read_ch(lex_state * lex)")
+	out_line(sprintf("static inline int %s(%s * lex)",
+		N_LEX_READ_CH(), N_LEX_STATE()))
 	out_line("{")
 	tab_inc()
 	out_line("lex->curr_ch = *lex->input++;")
 	out_line("++lex->input_pos;")
 	out_line("if (!(*lex->input))")
 	tab_inc()
-	out_line("lex->input = lex_usr_get_input(lex->usr_arg);")
+	out_line(sprintf("lex->input = %s(lex->usr_arg);", N_LEX_USR_GET_INPUT()))
 	tab_dec()
 	out_line("return lex->curr_ch;")
 	tab_dec()
@@ -106,16 +138,19 @@ function out_lex_define(    _set, _i, _end, _str) {
 
 	out_line()
 	out_line("// look at, but do not read, the next character")
-	out_line("static inline int lex_peek_ch(lex_state * lex)")
+	out_line(sprintf("static inline int %s(%s * lex)",
+		N_LEX_PEEK_CH(), N_LEX_STATE()))
 	out_line("{return *lex->input;}")
 	out_line()
 	out_line("// call this before writing to the lexer write space")
-	out_line("static inline void lex_save_begin(lex_state * lex)")
+	out_line(sprintf("static inline void %s(%s * lex)",
+		N_LEX_SAVE_BEGIN(), N_LEX_STATE()))
 	out_line("{lex->write_buff_pos = 0;}")
 	out_line()
 
 	out_line("// call this to write to the lexer write space")
-	out_line("static inline bool lex_save_ch(lex_state * lex)")
+	out_line(sprintf("static inline bool %s(%s * lex)",
+		N_LEX_SAVE_CH(), N_LEX_STATE()))
 	out_line("{")
 	tab_inc()
 	out_line("bool is_saved = (lex->write_buff_pos < lex->write_buff_len);") 
@@ -129,47 +164,56 @@ function out_lex_define(    _set, _i, _end, _str) {
 	
 	out_line()
 	out_line("// call this after you're done writing to the lexer write space")
-	out_line("static inline void lex_save_end(lex_state * lex)")
+	out_line(sprintf("static inline void %s(%s * lex)",
+		N_LEX_SAVE_END(), N_LEX_STATE()))
 	out_line("{lex->write_buff[lex->write_buff_pos] = '\\0';}")
 	out_line()
 	out_line("// get what you've written")
-	out_line("static inline char * lex_get_saved(lex_state * lex)")
+	out_line(sprintf("static inline char * %s(%s * lex)",
+		N_LEX_GET_SAVED(), N_LEX_STATE()))
 	out_line("{return lex->write_buff;}")
 	out_line()
 	out_line("// see how long it is")
-	out_line("static inline uint lex_get_saved_len(lex_state * lex)")
+	out_line(sprintf("static inline uint %s(%s * lex)",
+		N_LEX_GET_SAVED_LEN(), N_LEX_STATE()))
 	out_line("{return lex->write_buff_pos;}")
 	out_line()
 	out_line("// so it's possible for the user to access their argument back")
-	out_line("static inline void * lex_get_usr_arg(lex_state * lex)")
+	out_line(sprintf("static inline void * %s(%s * lex)",
+		N_LEX_GET_USR_ARG(), N_LEX_STATE()))
 	out_line("{return lex->usr_arg;}")
 	out_line()
 	out_line("// get the character position on the current input line")
-	out_line("static inline uint lex_get_input_pos(lex_state * lex)")
+	out_line(sprintf("static inline uint %s(%s * lex)",
+		N_LEX_GET_INPUT_POS(), N_LEX_STATE()))
 	out_line("{return lex->input_pos;}")
 	out_line()
 	out_line("// get the number of the current input line")
-	out_line("static inline uint lex_get_input_line_no(lex_state * lex)")
+	out_line(sprintf("static inline uint %s(%s * lex)",
+		N_LEX_GET_INPUT_LINE_NO(), N_LEX_STATE()))
 	out_line("{return lex->input_line;}")
 	out_line()
 	out_line("// get the last character the lexer read")
-	out_line("static inline int lex_get_curr_ch(lex_state * lex)")
+	out_line(sprintf("static inline int %s(%s * lex)",
+		N_LEX_GET_CURR_CH(), N_LEX_STATE()))
 	out_line("{return lex->curr_ch;}")
 	out_line()
 	out_line("// get the last token the lexer read")
-	out_line("static inline tok_id lex_get_curr_tok(lex_state * lex)")
+	out_line(sprintf("static inline %s %s(%s * lex)",
+		N_TOK_ID(), N_LEX_GET_CURR_TOK(), N_LEX_STATE()))
 	out_line("{return lex->curr_tok;}")
 	out_line()
 	out_line("// see if tok is the same as the token in the lexer")
-	out_line("static inline bool lex_match(lex_state * lex, tok_id tok)")
+	out_line(sprintf("static inline bool %s(%s * lex, %s tok)",
+		N_LEX_MATCH(), N_LEX_STATE(), N_TOK_ID()))
 	out_line("{return (lex->curr_tok == tok);}")
 	out_line()
 	
-	out_line(sprintf("static inline void lex_init(%s)",
-		"lex_state * lex, lex_init_info * init"))
+	out_line(sprintf("static inline void %s(%s * lex, %s * init)",
+		N_LEX_INIT(), N_LEX_STATE(), N_LEX_INIT_INFO()))
 	out_line("{")
 	tab_inc()
-	out_line("lex->input = lex_usr_get_input(init->usr_arg);")
+	out_line(sprintf("lex->input = %s(init->usr_arg);", N_LEX_USR_GET_INPUT()))
 	out_line("lex->input_pos = 0;")
 	out_line("lex->curr_ch = -1;")
 	out_line(sprintf("lex->curr_tok = %s;", TOK_ERR_ENUM()))
@@ -183,10 +227,12 @@ function out_lex_define(    _set, _i, _end, _str) {
 
 	out_line()
 	out_line("// returns the string representation of tok")
-	out_line("const char * lex_tok_to_str(tok_id tok);")
+	out_line(sprintf("const char * %s(%s tok);",
+		N_LEX_TOK_TO_STR(), N_TOK_ID()))
 	out_line()
 	out_line("// reads and returns the next token from the input")
-	out_line("tok_id lex_next(lex_state * lex);")
+	out_line(sprintf("%s %s(%s * lex);",
+		N_TOK_ID(), N_LEX_NEXT(), N_LEX_STATE()))
 	out_line()
 	if (has_keywords()) {
 		out_line("// returns the token for the keyword in lex's write buffer, "\
@@ -210,7 +256,7 @@ function out_tok_enum(    _set, _set_const, _set_str, _i, _end, _line_len, _j) {
 	arr_make_set(_set, G_patterns_arr, 1)
 	arr_append(_set_str, _set)
 	
-	out_line("typedef enum tok_id {")
+	out_line(sprintf("typedef enum %s {", N_TOK_ID()))
 
 	# Print _line_len enum values per line.
 	_line_len = 4
@@ -236,7 +282,7 @@ function out_tok_enum(    _set, _set_const, _set_str, _i, _end, _line_len, _j) {
 	out_line(sprintf("%s," , TOK_ERR_ENUM()))
 	out_line(sprintf("/* \"%s\" */", TOK_ERR_STR()))
 
-	out_line("} tok_id;")
+	out_line(sprintf("} %s;", N_TOK_ID()))
 }
 # </out_header>
 
@@ -244,7 +290,7 @@ function out_tok_enum(    _set, _set_const, _set_str, _i, _end, _line_len, _j) {
 function out_source() {
 	out_line("// <lex_source>")
 	out_signature()
-	out_line("#include \"lex.h\"")
+	out_line(sprintf("#include \"%s\"", npref("lex.h")))
 
 	if (get_kw_type() != KW_IFS()) {
 		out_line("#include <string.h>")
@@ -263,7 +309,7 @@ function out_source() {
 }
 # <tok_tbl>
 function TOK_ERR_STR() {return "I am Error"}
-function TOK_ERR_ENUM() {return "TOK_ERROR"}
+function TOK_ERR_ENUM() {return (toupper(npref_get()) "TOK_ERROR")}
 function out_tok_tbl(    _set, _set_str, _set_const, _i, _end, _line_len, _j) {
 	arr_make_set(_set, G_symbols_arr, 1)
 	arr_copy(_set_str, _set)
@@ -311,7 +357,8 @@ function out_tok_tbl(    _set, _set_str, _set_const, _i, _end, _line_len, _j) {
 # </tok_tbl>
 # <lex_tok_to_str>
 function out_tok_to_str() {
-	out_line("const char * lex_tok_to_str(tok_id tok)")
+	out_line(sprintf("const char * %s(%s tok)",
+		N_LEX_TOK_TO_STR(), N_TOK_ID()))
 	out_line("{")
 	tab_inc()
 	out_line("return tokens[tok];")
@@ -330,7 +377,7 @@ function out_all_char_tbl() {
 function out_ch_cls_enum(    _i, _end, _cls_set, _line_len) {
 	arr_make_set(_cls_set, G_char_tbl_arr, 2)
 
-	out_line("enum char_cls {")
+	out_line(sprintf("enum %s {", N_CHAR_CLS()))
 	
 	_line_len = 4
 	_i = 1
@@ -467,20 +514,20 @@ function out_tree_symb(tree, root, map_tok,    _next_str, _next_ch, _i, _end) {
 				# result into peek_ch.
 				
 				if (1 == _i)
-					out_line("peek_ch = lex_peek_ch(lex);")
+					out_line(sprintf("peek_ch = %s(lex);", N_LEX_PEEK_CH()))
 			
 				out_line(sprintf("%s ('%s' == peek_ch)",
 					(_i == 1) ? "if" : "else if" ,_next_ch))
 			} else {
 				# Do not cache for only a single call.
 				
-				out_line(sprintf("%s ('%s' == lex_peek_ch(lex))",
-					(_i == 1) ? "if" : "else if" ,_next_ch))
+				out_line(sprintf("%s ('%s' == %s(lex))",
+					(_i == 1) ? "if" : "else if" ,_next_ch, N_LEX_PEEK_CH()))
 			}
 			
 			out_line("{")
 			tab_inc()
-			out_line("lex_read_ch(lex);")
+			out_line(sprintf("%s(lex);", N_LEX_READ_CH()))
 			out_tree_symb(tree, (root _next_ch), map_tok)
 
 			tab_dec()
@@ -512,17 +559,18 @@ _map_symb, _map_act, _tree, _tmp, _dont_go) {
 	
 	arr_make_set(_cls_set, G_char_tbl_arr, 2)
 	
-	out_line("tok_id lex_next(lex_state * lex)")
+	out_line(sprintf("%s %s(%s * lex)",
+		N_TOK_ID(), N_LEX_NEXT(), N_LEX_STATE()))
 	out_line("{")
 	tab_inc()
 
 	out_line("int peek_ch = 0;")
-	out_line(sprintf("tok_id tok = %s;", TOK_ERR_ENUM()))
+	out_line(sprintf("%s tok = %s;", N_TOK_ID(), TOK_ERR_ENUM()))
 	out_line("while (true)")
 	out_line("{")
 	tab_inc()
 	
-	out_line("switch (char_cls_get(lex_read_ch(lex)))")
+	out_line(sprintf("switch (char_cls_get(%s(lex)))", N_LEX_READ_CH()))
 	out_line("{")
 	tab_inc()
 
@@ -561,7 +609,7 @@ _map_symb, _map_act, _tree, _tmp, _dont_go) {
 				# which has to take lex as an argument.
 				
 				sub(FCALL(), "(lex)", _act)
-				out_line(sprintf("tok = lex_usr_%s;", _act))
+				out_line(sprintf("tok = %s;", npref("lex_usr_" _act)))
 			} else if (NEXT_CH() == _act) {
 				# Immediately jump back to the top of the loop on white space.
 				
@@ -604,7 +652,7 @@ _map_symb, _map_act, _tree, _tmp, _dont_go) {
 	tab_inc()
 	
 	# Called on weird input, e.g. an '@' character in a C file.
-	out_line("tok = lex_usr_on_unknown_ch(lex);")
+	out_line(sprintf("tok = %s(lex);", N_LEX_USR_ON_UNKNOWN_CH()))
 	out_line("goto done;")
 	tab_dec()
 	out_line("} break;")
@@ -656,7 +704,8 @@ function out_keywords() {
 	}
 }
 function IS_KW_HEAD() {
-	return "tok_id lex_keyword_or_base(lex_state * lex, tok_id base)"
+	return sprintf("%s %s(%s * lex, %s base)",
+		N_TOK_ID(), N_LEX_KEYWORD_OR_BASE(), N_LEX_STATE(), N_TOK_ID())
 }
 function out_is_kw_head() {out_line(IS_KW_HEAD())}
 function KW_LEN_LIMIT() {return 31}
@@ -781,7 +830,7 @@ function out_bsrch_prereq() {
 	out_line("typedef struct str_tok {")
 	tab_inc()
 	out_line("const char * str;")
-	out_line("tok_id tok;")
+	out_line(sprintf("%s tok;", N_TOK_ID()))
 	tab_dec()
 	out_line("} str_tok;")
 	out_line("static int compar(const void * a, const void * b)")
@@ -803,7 +852,7 @@ function out_kw_bsrch() {
 	out_kw_struct_arr()
 	out_line()
 	
-	out_line("tok_id tok = base;")
+	out_line(sprintf("%s tok = base;", N_TOK_ID()))
 	out_line("const char * txt = lex->write_buff;")
 	out_line("uint txt_len = lex->write_buff_pos;")
 
@@ -872,7 +921,7 @@ function out_kw_ifs(    _tree, _set_kw, _map_kw, _i, _end, _arr, _set_ch) {
 	out_is_kw_head()
 	out_line("{")
 	tab_inc()
-	out_line("tok_id tok = base;")
+	out_line(sprintf("%s tok = base;", N_TOK_ID()))
 	out_line("uint txt_len = lex->write_buff_pos;")
 	out_line()
 
@@ -963,6 +1012,18 @@ function check_kw(str) {
 			KW_BSEARCH(), KW_IFS()))
 	}
 }
+function npref(str) {return (npref_get() str)}
+function npref_set(str) {_B_npref = str}
+function npref_get() {return _B_npref}
+function npref_constants_all() {
+	npref_constants(G_char_tbl_arr, 2, npref_get())
+	npref_constants(G_symbols_arr, 2, npref_get())
+	npref_constants(G_keywords_arr, 2, npref_get())
+	npref_constants(G_patterns_arr, 2, npref_get())
+	npref_constants(G_actions_arr, 1, npref_get())
+	npref_constants(G_actions_arr, 2, npref_get())
+}
+
 function err_quit(msg) {
 	error_quit(msg, SCRIPT_NAME())
 }
@@ -984,6 +1045,9 @@ print sprintf("%s     - a literal character by character if - else if tree. " \
 print sprintf("Faster than %s, doesn't use stdlib.h and string.h, but more " \
 "code. %s", KW_BSEARCH(), KW_BSEARCH())
 print "is the default."
+print "-vNamePrefix=<string> - prefixes all function and constant names with "\
+"<string>."
+print "E.g. -vNamePrefix='foo_' will result in foo_lex_usr_get_input()"
 print ""
 }
 
@@ -1003,16 +1067,17 @@ function on_begin() {
 	
 	if (!Keywords)
 		Keywords = KW_BSEARCH()
-	
 	check_kw(Keywords)
 	set_kw_type(Keywords)
+	
+	npref_set(NamePrefix)
 }
 function on_char_tbl() {save_to(G_char_tbl_arr)}
 function on_symbols()  {save_to(G_symbols_arr)}
 function on_keywords() {save_to(G_keywords_arr)}
 function on_patterns() {save_to(G_patterns_arr)}
 function on_actions()  {save_to(G_actions_arr)}
-function on_end()      {generate()}
+function on_end()      {npref_constants_all(); generate()}
 
 # Produce an error if lex_lib.awk is not included
 BEGIN {lex_lib_is_included()}

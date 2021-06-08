@@ -478,33 +478,13 @@ function ch_cls_to_const_map_get(ch_cls) {
 }
 function npref_set(str) {_B_npref = str}
 function npref_get() {return _B_npref}
-
-function npref_constants() {
-	npref_const_arr(G_char_tbl_arr, 2)
-	npref_const_arr(G_symbols_arr, 2)
-	npref_const_arr(G_keywords_arr, 2)
-	npref_const_arr(G_patterns_arr, 2)
-	npref_const_arr(G_actions_arr, 1)
-	npref_const_arr(G_actions_arr, 2)
-}
-function npref_const_arr(arr, ind,    _i, _end, _arr, _pref, _str) {
-	if (!(_pref = npref_get()) || (ind != 1 && ind != 2))
-		return
-
-	npref_set(toupper(_pref))
-
-	_end = arr_len(arr)
-	for (_i = 1; _i <= _end; ++_i) {
-		_str = arr[_i]
-
-		unjoin(_arr, _str)
-		if (is_constant(_arr[ind]))
-			_arr[ind] = cname(_arr[ind])
-
-		arr[_i] = join(_arr[1], _arr[2])
-	}
-
-	npref_set(_pref)
+function npref_constants_all() {
+	npref_constants(G_char_tbl_arr, 2, npref_get())
+	npref_constants(G_symbols_arr, 2, npref_get())
+	npref_constants(G_keywords_arr, 2, npref_get())
+	npref_constants(G_patterns_arr, 2, npref_get())
+	npref_constants(G_actions_arr, 1, npref_get())
+	npref_constants(G_actions_arr, 2, npref_get())
 }
 
 function on_help() {
@@ -539,7 +519,7 @@ function on_symbols()  {save_to(G_symbols_arr)}
 function on_keywords() {save_to(G_keywords_arr)}
 function on_patterns() {save_to(G_patterns_arr)}
 function on_actions()  {save_to(G_actions_arr)}
-function on_end()      {npref_constants(); generate()}
+function on_end()      {npref_constants_all(); generate()}
 
 # Produce an error if lex_lib.awk is not included
 BEGIN {lex_lib_is_included()}

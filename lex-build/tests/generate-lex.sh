@@ -17,6 +17,12 @@ function generate_c
 	awk -f ../lex_lib.awk -f ../lex-c.awk -vKeywords="$1" |
 	awk -vType="$1" '/<lex_header>/, /<\/lex_header>/ {print $0 > "./c/lex.h"}
 	/<lex_source>/, /<\/lex_source>/ {print $0 > sprintf("./c/lex_%s.c", Type)}'
+
+	awk -f ../lex_lib.awk -f ../lex-first.awk input.txt |
+	awk -f ../lex_lib.awk -f ../lex-c.awk -vKeywords="$1" -vNamePrefix="foo_" |
+	awk -vType="$1" \
+'/<lex_header>/, /<\/lex_header>/ {print $0 > "./c/foo_lex.h"}
+/<lex_source>/, /<\/lex_source>/ {print $0 > sprintf("./c/foo_lex_%s.c", Type)}'
 }
 
 function generate_awk

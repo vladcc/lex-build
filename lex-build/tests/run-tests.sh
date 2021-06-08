@@ -85,17 +85,29 @@ function test_awk
 # </awk>
 
 # <C>
-function c_clean { bt_eval "rm lex_*.bin"; }
+function c_clean { bt_eval "rm *lex_*.bin"; }
 
-readonly G_C_LEXERS="lex_bsearch lex_ifs"
+readonly G_C_LEXERS="lex_bsearch lex_ifs foo_lex_bsearch foo_lex_ifs"
 function c_compile_lex
 {
-	for lexer in $G_C_LEXERS; do
+	local L_LEX_NO_FOO="lex_bsearch lex_ifs"
+	local L_LEX_FOO="foo_lex_bsearch foo_lex_ifs"
+	
+	for lexer in $L_LEX_NO_FOO; do
 		eval_success "gcc ./c/${lexer}.c ./c/lex_main.c -o ${lexer}0.bin -Wall"
 		eval_success \
 			"gcc ./c/${lexer}.c ./c/lex_main.c -o ${lexer}3.bin -Wall -O3"
 		eval_success \
 			"gcc ./c/${lexer}.c ./c/unit_test.c -o ${lexer}_unit_test.bin -Wall"
+	done
+
+	for lexer in $L_LEX_FOO; do
+		eval_success \
+			"gcc ./c/${lexer}.c ./c/foo_lex_main.c -o ${lexer}0.bin -Wall"
+		eval_success \
+			"gcc ./c/${lexer}.c ./c/foo_lex_main.c -o ${lexer}3.bin -Wall -O3"
+		eval_success \
+		"gcc ./c/${lexer}.c ./c/foo_unit_test.c -o ${lexer}_unit_test.bin -Wall"
 	done
 }
 function c_run_tests
@@ -114,7 +126,7 @@ function c_test_lex_lib_inc
 }
 function c_test_ver
 {
-	run_test_version_info "lex-c.awk" "lex-c.awk 1.11"
+	run_test_version_info "lex-c.awk" "lex-c.awk 1.2"
 }
 function test_c
 {
