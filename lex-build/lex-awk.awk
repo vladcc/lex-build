@@ -46,25 +46,25 @@ function out_const(    _set, _set_const, _set_str, _i, _end, _ch_cls) {
 	# function CH_CLS_BAR() {return 2}
 	# ...
  
-	arr_make_set(_set, G_symbols_arr, 2)
-	arr_copy(_set_const, _set)
-	arr_make_set(_set, G_keywords_arr, 2)
-	arr_append(_set_const, _set)
-	arr_make_set(_set, G_patterns_arr, 2)
-	arr_append(_set_const, _set)
+	vect_make_set(_set, G_symbols_vect, 2)
+	vect_copy(_set_const, _set)
+	vect_make_set(_set, G_keywords_vect, 2)
+	vect_append(_set_const, _set)
+	vect_make_set(_set, G_patterns_vect, 2)
+	vect_append(_set_const, _set)
 
-	arr_make_set(_set, G_symbols_arr, 1)
-	arr_copy(_set_str, _set)
-	arr_make_set(_set, G_keywords_arr, 1)
-	arr_append(_set_str, _set)
-	arr_make_set(_set, G_patterns_arr, 1)
-	arr_append(_set_str, _set)
+	vect_make_set(_set, G_symbols_vect, 1)
+	vect_copy(_set_str, _set)
+	vect_make_set(_set, G_keywords_vect, 1)
+	vect_append(_set_str, _set)
+	vect_make_set(_set, G_patterns_vect, 1)
+	vect_append(_set_str, _set)
 
 	out_line()
 	out_line("# the only way to have immutable values; use as constants")
 
 	# Tokens.
-	_end = arr_len(_set_const)
+	_end = vect_len(_set_const)
 	for (_i = 1; _i <= _end; ++_i) {
 		out_line(sprintf("function %s() {return \"%s\"}",
 			_set_const[_i], _set_str[_i]))
@@ -73,10 +73,10 @@ function out_const(    _set, _set_const, _set_str, _i, _end, _ch_cls) {
 		toupper(cname("TOK_ERROR")), TOK_ERR()))
 	out_line()
 	
-	arr_make_set(_set, G_char_tbl_arr, 2)
+	vect_make_set(_set, G_char_tbl_vect, 2)
 
 	# Char classes.
-	_end = arr_len(_set)
+	_end = vect_len(_set)
 	for (_i = 1; _i <= _end; ++_i) {
 		_ch_cls = _set[_i]
 		out_line(sprintf("function %s() {return %d}", _ch_cls, _i))
@@ -96,9 +96,9 @@ function out_init_ch_tbl(    _i, _end, _ch, _cls, _split) {
 	out_line(sprintf("%s() {", _fdecl("init_ch_tbl")))
 	tab_inc()
 
-	_end = arr_len(G_char_tbl_arr)
+	_end = vect_len(G_char_tbl_vect)
 	for (_i = 1; _i <= _end; ++_i) {
-		unjoin(_split, G_char_tbl_arr[_i])
+		unjoin(_split, G_char_tbl_vect[_i])
 		_ch = _split[1]
 		_cls = _split[2]
 
@@ -126,9 +126,9 @@ function out_kwds(    _set, _i, _end) {
 	out_line(sprintf("%s() {", _fdecl("init_keywords")))
 	tab_inc()
 
-	arr_make_set(_set, G_keywords_arr, 1)
+	vect_make_set(_set, G_keywords_vect, 1)
 	
-	_end = arr_len(_set)
+	_end = vect_len(_set)
 	for (_i = 1; _i <= _end; ++_i)
 		out_line(sprintf("%s[\"%s\"] = 1", vname("keywords_tbl"), _set[_i]))
 	
@@ -289,7 +289,7 @@ _map_symb, _map_act, _tree, _tmp) {
 	# Outputs a big if - else if tree. Branches on character class first and on
 	# character value second.
 	
-	arr_make_set(_cls_set, G_char_tbl_arr, 2)
+	vect_make_set(_cls_set, G_char_tbl_vect, 2)
 
 	out_line("# return the next token; constants are inlined for performance")
 	out_line(sprintf("%s() {", fdecl("next")))
@@ -301,9 +301,9 @@ _map_symb, _map_act, _tree, _tmp) {
 	out_line(sprintf("%s = %s[%s()]",
 		VAR_CURR_CH_CLS_CACHE(), VAR_CH_TBL(), F_READ_CH()))
 
-	map_from_arr(_map_cls_chr, G_char_tbl_arr, 2, 1)
-	map_from_arr(_map_symb, G_symbols_arr)
-	map_from_arr(_map_act, G_actions_arr)
+	vect_to_map(_map_cls_chr, G_char_tbl_vect, 2, 1)
+	vect_to_map(_map_symb, G_symbols_vect)
+	vect_to_map(_map_act, G_actions_vect)
 	ch_ptree_init(_tree)
 
 	for (_tmp in _map_symb) {
@@ -311,7 +311,7 @@ _map_symb, _map_act, _tree, _tmp) {
 			ch_ptree_insert(_tree, _tmp)
 	}
 
-	_end = arr_len(_cls_set)
+	_end = vect_len(_cls_set)
 	for (_i = 1; _i <= _end; ++_i) {
 		_cls = _cls_set[_i]
 
@@ -441,8 +441,8 @@ print "# The user implements the following:"
 print sprintf("# %s()", F_USR_GET_LINE())
 print sprintf("# %s()", F_USR_ON_UNKNOWN_CH())
 
-	arr_make_set(_set, G_actions_arr, 2)
-	_end = arr_len(_set)
+	vect_make_set(_set, G_actions_vect, 2)
+	_end = vect_len(_set)
 	for (_i = 1; _i <= _end; ++_i) {
 		_str = _set[_i]
 		if (match(_str, FCALL()))
@@ -479,12 +479,12 @@ function ch_cls_to_const_map_get(ch_cls) {
 function npref_set(str) {_B_npref = str}
 function npref_get() {return _B_npref}
 function npref_constants_all() {
-	npref_constants(G_char_tbl_arr, 2, npref_get())
-	npref_constants(G_symbols_arr, 2, npref_get())
-	npref_constants(G_keywords_arr, 2, npref_get())
-	npref_constants(G_patterns_arr, 2, npref_get())
-	npref_constants(G_actions_arr, 1, npref_get())
-	npref_constants(G_actions_arr, 2, npref_get())
+	npref_constants(G_char_tbl_vect, 2, npref_get())
+	npref_constants(G_symbols_vect, 2, npref_get())
+	npref_constants(G_keywords_vect, 2, npref_get())
+	npref_constants(G_patterns_vect, 2, npref_get())
+	npref_constants(G_actions_vect, 1, npref_get())
+	npref_constants(G_actions_vect, 2, npref_get())
 }
 
 function on_help() {
@@ -507,18 +507,18 @@ print sprintf("%s %s", SCRIPT_NAME(), SCRIPT_VERSION())
 }
 
 function on_begin() {
-	arr_init(G_char_tbl_arr)
-	arr_init(G_symbols_arr)
-	arr_init(G_keywords_arr)
-	arr_init(G_patterns_arr)
-	arr_init(G_actions_arr)
+	vect_init(G_char_tbl_vect)
+	vect_init(G_symbols_vect)
+	vect_init(G_keywords_vect)
+	vect_init(G_patterns_vect)
+	vect_init(G_actions_vect)
 	npref_set(NamePrefix)
 }
-function on_char_tbl() {save_to(G_char_tbl_arr)}
-function on_symbols()  {save_to(G_symbols_arr)}
-function on_keywords() {save_to(G_keywords_arr)}
-function on_patterns() {save_to(G_patterns_arr)}
-function on_actions()  {save_to(G_actions_arr)}
+function on_char_tbl() {save_to(G_char_tbl_vect)}
+function on_symbols()  {save_to(G_symbols_vect)}
+function on_keywords() {save_to(G_keywords_vect)}
+function on_patterns() {save_to(G_patterns_vect)}
+function on_actions()  {save_to(G_actions_vect)}
 function on_end()      {npref_constants_all(); generate()}
 
 # Produce an error if lex_lib.awk is not included

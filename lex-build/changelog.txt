@@ -33,3 +33,19 @@
 2021-06-08
 	lex-c.awk v1.11 -> v1.2:
 	-vNamePrefix added with 'foo_' prefix tests.
+
+2021-06-20
+	lex-c.awk v1.2 -> v1.3:
+	bsearch keyword lookup now limits the number of lookups by first letter, not
+	by keyword length.
+	readme_lex-c.txt updated with new runs.
+	
+	misc:
+	Mass renamed arr_*() to vect_*(). Checked, but weird names might still
+	exist.
+	
+	lex_lib.awk v1.01 -> v1.02
+	vect_to_array() added
+
+	run-tests.sh:
+	c_test_kw_len added.

@@ -126,12 +126,24 @@ function c_test_lex_lib_inc
 }
 function c_test_ver
 {
-	run_test_version_info "lex-c.awk" "lex-c.awk 1.2"
+	run_test_version_info "lex-c.awk" "lex-c.awk 1.3"
+}
+function c_test_kw_len
+{
+	local L_MSG=""
+	local L_EXPECT="lex-c.awk: error: keyword 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa': length cannot be greater than 31"
+	
+	L_MSG="$(awk -f ../lex_lib.awk -f ../lex-first.awk input-err-lex-c-kw-len.txt | awk -f ../lex_lib.awk -f ../lex-c.awk 2>&1)"
+	bt_assert_failure
+
+	bt_diff "<(echo \"$L_MSG\")" "<(echo \"$L_EXPECT\")"
+	bt_assert_success
 }
 function test_c
 {
 	bt_eval c_test_lex_lib_inc
 	bt_eval c_test_ver
+	bt_eval c_test_kw_len
 	bt_eval c_compile_lex
 	bt_eval c_run_tests
 	bt_eval clean_up

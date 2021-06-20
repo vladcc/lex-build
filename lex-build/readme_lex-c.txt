@@ -84,8 +84,8 @@ type of basic input.
 --------------------------------------------------------------------------------
 $ wc -l ./c-vs-flex/lex.h ./c-vs-flex/lex_bsearch.c 
   164 ./c-vs-flex/lex.h
-  438 ./c-vs-flex/lex_bsearch.c
-  602 total
+  448 ./c-vs-flex/lex_bsearch.c
+  612 total
 
 $ wc -l ./c-vs-flex/lex.h ./c-vs-flex/lex_ifs.c 
   164 ./c-vs-flex/lex.h
@@ -120,24 +120,24 @@ $ ls -lh ./big_file.txt | awk '{print $5,$NF}'
 
 for n in $(seq 1 51); \
 do ./flex.bin big_file.txt; done | sort -n -k1,1 | awk 'FNR==26'
-0.104371 sec
+0.099854 sec
 
 for n in $(seq 1 51); \
 do ./flex.full.bin big_file.txt; done | sort -n -k1,1 | awk 'FNR==26'
-0.075917 sec
+0.072045 sec
 
 for n in $(seq 1 51); \
 do ./lex_bsearch.bin big_file.txt; done | sort -n -k1,1 | awk 'FNR==26'
-0.124254 sec
+0.112468 sec
 
 for n in $(seq 1 51); \
 do ./lex_ifs.bin big_file.txt; done | sort -n -k1,1 | awk 'FNR==26'
-0.113010 sec
+0.109493 sec
 --------------------------------------------------------------------------------
 Here lex_* are expected to be slower - each lexer operation is a function call
 and no functions have been inlined. Interestingly enough, though, they are still
-pretty close to the flex with compressed tables. Flex with full tables blows
-the others out of the water, which makes sense.
+pretty close to the flex with compressed tables. Flex with full tables is the
+fastest one, which makes sense.
 
 -O3:
 --------------------------------------------------------------------------------
@@ -146,22 +146,22 @@ $ ls -lh ./big_file.txt | awk '{print $5,$NF}'
 
 for n in $(seq 1 51); \
 do ./flex.bin big_file.txt; done | sort -n -k1,1 | awk 'FNR==26'
-0.062599 sec
+0.058767 sec
 
 for n in $(seq 1 51); \
 do ./flex.full.bin big_file.txt; done | sort -n -k1,1 | awk 'FNR==26'
-0.035563 sec
+0.035657 sec
 
 for n in $(seq 1 51); \
 do ./lex_bsearch.bin big_file.txt; done | sort -n -k1,1 | awk 'FNR==26'
-0.036307 sec
+0.035029 sec
 
 for n in $(seq 1 51); \
 do ./lex_ifs.bin big_file.txt; done | sort -n -k1,1 | awk 'FNR==26'
-0.032534 sec
+0.032499 sec
 --------------------------------------------------------------------------------
-This is where it gets interesting. When running this tests, lex_ifs turns out
-consistently faster than flex.full.
+This is where it gets interesting. Both lex_ifs and lex_bsearch turn out
+consistently faster than full flex.
 
 2.2. ARM (Raspberry PI 3B)
 
@@ -176,21 +176,22 @@ $ ls -lh ./big_file.txt | awk '{print $5,$NF}'
 
 for n in $(seq 1 51); \
 do ./flex.bin big_file.txt; done | sort -n -k1,1 | awk 'FNR==26'
-0.758132 sec
+0.760939 sec
 
 for n in $(seq 1 51); \
 do ./flex.full.bin big_file.txt; done | sort -n -k1,1 | awk 'FNR==26'
-0.368219 sec
+0.370874 sec
 
 for n in $(seq 1 51); \
 do ./lex_bsearch.bin big_file.txt; done | sort -n -k1,1 | awk 'FNR==26'
-0.705409 sec
+0.693551 sec
 
 for n in $(seq 1 51); \
 do ./lex_ifs.bin big_file.txt; done | sort -n -k1,1 | awk 'FNR==26'
-0.674364 sec
+0.672709 sec
 --------------------------------------------------------------------------------
-Here compressed flex is the weakest one.
+Here compressed flex is the weakest one, even with all the function calls in
+lex_*
 
 -O3:
 --------------------------------------------------------------------------------
@@ -199,19 +200,19 @@ $ ls -lh ./big_file.txt | awk '{print $5,$NF}'
 
 for n in $(seq 1 51); \
 do ./flex.bin big_file.txt; done | sort -n -k1,1 | awk 'FNR==26'
-0.386377 sec
+0.384480 sec
 
 for n in $(seq 1 51); \
 do ./flex.full.bin big_file.txt; done | sort -n -k1,1 | awk 'FNR==26'
-0.173940 sec
+0.174035 sec
 
 for n in $(seq 1 51); \
 do ./lex_bsearch.bin big_file.txt; done | sort -n -k1,1 | awk 'FNR==26'
-0.222384 sec
+0.215173 sec
 
 for n in $(seq 1 51); \
 do ./lex_ifs.bin big_file.txt; done | sort -n -k1,1 | awk 'FNR==26'
-0.194283 sec
+0.194506 sec
 --------------------------------------------------------------------------------
 And here lex_ifs is about as much slower than flex.full as it is faster on the
 i5. Compressed flex is still by far the slowest one.

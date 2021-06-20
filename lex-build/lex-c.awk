@@ -2,7 +2,7 @@
 
 # Author: Vladimir Dinev
 # vld.dinev@gmail.com
-# 2021-06-08
+# 2021-06-20
 
 # Generates a lexer in C. The lexing strategy is quite simple - the next token
 # is determined by switch-ing on the class of the current input character and
@@ -16,7 +16,7 @@
 
 # <script>
 function SCRIPT_NAME() {return "lex-c.awk"}
-function SCRIPT_VERSION() {return "1.2"}
+function SCRIPT_VERSION() {return "1.3"}
 # </script>
 
 # <out_signature>
@@ -69,12 +69,12 @@ function out_header(    _hdr) {
 	out_line("// </lex_header>")
 }
 function out_lex_cls_events_memb(    _set, _i, _end, _str) {
-	arr_make_set(_set, G_actions_arr, 2)
+	vect_make_set(_set, G_actions_vect, 2)
 
 	out_line("// return text input; when done return \"\", never NULL")
 	out_line(sprintf("const char * %s(void * usr_arg);", N_LEX_USR_GET_INPUT()))
 	out_line("// user events")
-	_end = arr_len(_set)
+	_end = vect_len(_set)
 	for(_i = 1; _i <= _end; ++_i) {
 		_str = _set[_i]
 		if (match(_str, FCALL())) {
@@ -242,26 +242,26 @@ function out_lex_define(    _set, _i, _end, _str) {
 	}
 }
 function out_tok_enum(    _set, _set_const, _set_str, _i, _end, _line_len, _j) {
-	arr_make_set(_set, G_symbols_arr, 2)
-	arr_copy(_set_const, _set)
-	arr_make_set(_set, G_keywords_arr, 2)
-	arr_append(_set_const, _set)
-	arr_make_set(_set, G_patterns_arr, 2)
-	arr_append(_set_const, _set)
+	vect_make_set(_set, G_symbols_vect, 2)
+	vect_copy(_set_const, _set)
+	vect_make_set(_set, G_keywords_vect, 2)
+	vect_append(_set_const, _set)
+	vect_make_set(_set, G_patterns_vect, 2)
+	vect_append(_set_const, _set)
 
-	arr_make_set(_set, G_symbols_arr, 1)
-	arr_copy(_set_str, _set)
-	arr_make_set(_set, G_keywords_arr, 1)
-	arr_append(_set_str, _set)
-	arr_make_set(_set, G_patterns_arr, 1)
-	arr_append(_set_str, _set)
+	vect_make_set(_set, G_symbols_vect, 1)
+	vect_copy(_set_str, _set)
+	vect_make_set(_set, G_keywords_vect, 1)
+	vect_append(_set_str, _set)
+	vect_make_set(_set, G_patterns_vect, 1)
+	vect_append(_set_str, _set)
 	
 	out_line(sprintf("typedef enum %s {", N_TOK_ID()))
 
 	# Print _line_len enum values per line.
 	_line_len = 4
 	_i = 1
-	_end = arr_len(_set_const)
+	_end = vect_len(_set_const)
 	
 	while (_i <= _end) {
 
@@ -311,19 +311,19 @@ function out_source() {
 function TOK_ERR_STR() {return "I am Error"}
 function TOK_ERR_ENUM() {return (toupper(npref_get()) "TOK_ERROR")}
 function out_tok_tbl(    _set, _set_str, _set_const, _i, _end, _line_len, _j) {
-	arr_make_set(_set, G_symbols_arr, 1)
-	arr_copy(_set_str, _set)
-	arr_make_set(_set, G_keywords_arr, 1)
-	arr_append(_set_str, _set)
-	arr_make_set(_set, G_patterns_arr, 1)
-	arr_append(_set_str, _set)
+	vect_make_set(_set, G_symbols_vect, 1)
+	vect_copy(_set_str, _set)
+	vect_make_set(_set, G_keywords_vect, 1)
+	vect_append(_set_str, _set)
+	vect_make_set(_set, G_patterns_vect, 1)
+	vect_append(_set_str, _set)
 
-	arr_make_set(_set, G_symbols_arr, 2)
-	arr_copy(_set_const, _set)
-	arr_make_set(_set, G_keywords_arr, 2)
-	arr_append(_set_const, _set)
-	arr_make_set(_set, G_patterns_arr, 2)
-	arr_append(_set_const, _set)
+	vect_make_set(_set, G_symbols_vect, 2)
+	vect_copy(_set_const, _set)
+	vect_make_set(_set, G_keywords_vect, 2)
+	vect_append(_set_const, _set)
+	vect_make_set(_set, G_patterns_vect, 2)
+	vect_append(_set_const, _set)
 
 	
 	# Print all tokens in a static string table.
@@ -332,7 +332,7 @@ function out_tok_tbl(    _set, _set_str, _set_const, _i, _end, _line_len, _j) {
 	# Print _line_len tokens per line.
 	_line_len = 4
 	_i = 1
-	_end = arr_len(_set_str)
+	_end = vect_len(_set_str)
 	while (_i <= _end) {
 
 		# Print the token string representation.
@@ -375,13 +375,13 @@ function out_all_char_tbl() {
 	out_lex_next()
 }
 function out_ch_cls_enum(    _i, _end, _cls_set, _line_len) {
-	arr_make_set(_cls_set, G_char_tbl_arr, 2)
+	vect_make_set(_cls_set, G_char_tbl_vect, 2)
 
 	out_line(sprintf("enum %s {", N_CHAR_CLS()))
 	
 	_line_len = 4
 	_i = 1
-	_end = arr_len(_cls_set)
+	_end = vect_len(_cls_set)
 	
 	while (_i <= _end) {
 	
@@ -408,7 +408,7 @@ _zero_line_len, _zero_new_line, _j, _ch_out) {
 	# comments per line.
 	out_line("static const byte char_cls_tbl[CHAR_TBL_SZ] = {")
 
-	map_from_arr(_map_ch_cls, G_char_tbl_arr)
+	vect_to_map(_map_ch_cls, G_char_tbl_vect)
 
 	_zero_new_line = 0
 	_zero_line_len = 16
@@ -557,7 +557,7 @@ _map_symb, _map_act, _tree, _tmp, _dont_go) {
 	#     ++lex->line_no;
 	# ...
 	
-	arr_make_set(_cls_set, G_char_tbl_arr, 2)
+	vect_make_set(_cls_set, G_char_tbl_vect, 2)
 	
 	out_line(sprintf("%s %s(%s * lex)",
 		N_TOK_ID(), N_LEX_NEXT(), N_LEX_STATE()))
@@ -574,9 +574,9 @@ _map_symb, _map_act, _tree, _tmp, _dont_go) {
 	out_line("{")
 	tab_inc()
 
-	map_from_arr(_map_cls_chr, G_char_tbl_arr, 2, 1)
-	map_from_arr(_map_symb, G_symbols_arr)
-	map_from_arr(_map_act, G_actions_arr)
+	vect_to_map(_map_cls_chr, G_char_tbl_vect, 2, 1)
+	vect_to_map(_map_symb, G_symbols_vect)
+	vect_to_map(_map_act, G_actions_vect)
 	ch_ptree_init(_tree)
 
 	for (_tmp in _map_symb) {
@@ -589,7 +589,7 @@ _map_symb, _map_act, _tree, _tmp, _dont_go) {
 			ch_ptree_insert(_tree, _tmp)
 	}
 
-	_end = arr_len(_cls_set)
+	_end = vect_len(_cls_set)
 	for (_i = 1; _i <= _end; ++_i) {
 		_cls = _cls_set[_i]
 		_dont_go = 0 # <-- stays 0 if a complete token was read
@@ -670,10 +670,10 @@ _map_symb, _map_act, _tree, _tmp, _dont_go) {
 # </lex_next>
 # <keywords>
 function kw_longest(    _set, _i, _end, _max, _n) {
-	arr_make_set(_set, G_keywords_arr)
+	vect_make_set(_set, G_keywords_vect)
 
 	_max = length(_set[1])
-	_end = arr_len(_set)
+	_end = vect_len(_set)
 	for (_i = 2; _i <= _end; ++_i) {
 		_n = length(_set[_i])
 		if (_n > _max)
@@ -683,7 +683,7 @@ function kw_longest(    _set, _i, _end, _max, _n) {
 	return _max
 }
 
-function has_keywords() {return arr_len(G_keywords_arr)}
+function has_keywords() {return vect_len(G_keywords_vect)}
 function set_kw_type(str) {_B_kw_type = str}
 function get_kw_type() {return _B_kw_type}
 
@@ -709,40 +709,37 @@ function IS_KW_HEAD() {
 }
 function out_is_kw_head() {out_line(IS_KW_HEAD())}
 function KW_LEN_LIMIT() {return 31}
-function out_valid_len(    _i, _end, _j, _jend, _valid_lengths, _arr, _kw_len,
-_bin_str, _add) {
+function out_valid_len(    _i, _end, _j, _jend, _valid_lengths, _bin_str, _add,
+_kw_set, _kw_lengths) {
 	# Generate a bitmap of valid keyword lengths. Bit number 0 is always 0. If
 	# there are keywords with a length of 1, then bit number 1 is 1, if not,
 	# then it's 0. If there are keywords 2 characters long, then bit 2 is 1, 0
 	# if there aren't, etc. You can then easily check if a keyword of length
 	# n exists by (VALID_LENGTHS & (1 << n)), given n <= 31.
+
+
+	vect_make_set(_kw_set, G_keywords_vect, 1)
+
+	_end = vect_len(_kw_set)
+	for (_i = 1; _i <= _end; ++_i)
+		_kw_lengths[_i] = length(_kw_set[_i])
 	
 	_end = KW_LEN_LIMIT()
-	_jend = arr_len(G_keywords_sort_len_arr)
+	_jend = vect_len(_kw_set)
 
-	# Get the actual int value of the bit map.
-	_valid_lengths = 0
-	for (_i = 1; _i <= _end; ++_i) {
-		for (_j = 1; _j <= _jend; ++_j) {
-			unjoin(_arr, G_keywords_sort_len_arr[_j])
-			_kw_len = _arr[2]
-			if (_i == _kw_len) {
-				_valid_lengths = or(_valid_lengths, lshift(1, _i))
-				break
-			}
-		}
-	}
-
-	# Get the binary representation of the int bitmap value as a string.
+	# Get the actual int value of the bit map and generate as binary
 	_bin_str = "0"
+	_valid_lengths = 0
 	for (_i = 1; _i <= _end; ++_i) {
 		_add = "0"
 		for (_j = 1; _j <= _jend; ++_j) {
-			unjoin(_arr, G_keywords_sort_len_arr[_j])
-			_kw_len = _arr[2]
-			if (_i == _kw_len)
+			if (_i == _kw_lengths[_j]) {
+				_valid_lengths = or(_valid_lengths, lshift(1, _i))
 				_add = "1"
+				break
+			}	
 		}
+
 		if (!(_i % 8))
 			_bin_str = (" " _bin_str)
 		else if (!(_i % 4))
@@ -757,34 +754,47 @@ _bin_str, _add) {
 }
 
 function KW_LEN_CHECK() {
-	return "(txt_len <= KW_LONG && is_valid_len(txt_len))"
+	return "txt_len <= KW_LONG && is_valid_len(txt_len)"
 }
 
 # <lex_kw_lookup_bsearch>
-function out_kw_struct_arr(    _map_kw, _arr, _i, _end, _kw, _kw_len,
-_j, _jend, _len_start, _len_len) {
-	map_from_arr(_map_kw, G_keywords_arr)
-
-	_end = arr_len(G_keywords_sort_len_arr)
-
-	# An array of elements {"keyword", TOK_KEYWORD} where keywords of the same
-	# length appear next to each other in alphabetical order. This allows for
-	# bsearch only on the range of keywords with the same length as the input.
-
-	out_line("// ordered by length and value; don't jumble up")
-	out_line(sprintf("static const str_tok kws[%d] = {", _end))
+function out_kw_static_tbls(    _set, _sorted, _i, _end, _pad, _map_kw, _tbl,
+_start, _len, _ch, _nout) {
+	vect_make_set(_set, G_keywords_vect, 1)
+	vect_to_map(_map_kw, G_keywords_vect)
+	vect_to_array(_sorted, _set)
 	
+	_end = asort(_sorted)
+
+	# Output keywords table
+	out_line("// sorted; don't jumble up")
+	out_line(sprintf("static const char * kws[%d] = {", _end))
+	out_tabs()
+	_pad = 4
 	for (_i = 1; _i <= _end; ++_i) {
-		unjoin(_arr, G_keywords_sort_len_arr[_i])
-		_kw = _arr[1]
-		_kw_len = _arr[2]
-		out_line(sprintf("%s %s %s",
-			sprintf("/* %02d */", _i-1),
-			sprintf("{\"%s\", %s},", _kw, _map_kw[_kw]),
-			sprintf("// %d", _kw_len)))
+		printf("%-15s", sprintf("\"%s\", ", _sorted[_i]))
+		if (!(_i % _pad) && _i != _end) {
+			out_line()
+			out_tabs()
+		}
 	}
+	out_line()
 	out_line("};")
-	
+
+	out_line()
+	# Output tokens table
+	out_line(sprintf("static const %s tks[%d] = {", N_TOK_ID(), _end))
+	out_tabs()
+	for (_i = 1; _i <= _end; ++_i) {
+		printf("%-15s", sprintf("%s, ", _map_kw[_sorted[_i]]))
+		if (!(_i % _pad) && _i != _end) {
+			out_line()
+			out_tabs()
+		}
+	}
+	out_line()
+	out_line("};")
+
 	out_line()
 	out_line("typedef struct kw_len_data {")
 	tab_inc()
@@ -793,52 +803,66 @@ _j, _jend, _len_start, _len_len) {
 	tab_dec()
 	out_line("} kw_len_data;")
 
+	# Find out keyword len info by first character
+	# _end is still the length of _sorted
+	for (_i = 1; _i <= _end; ++_i)
+		++_tbl[str_ch_at(_sorted[_i], 1)]
+
+	# Sort only the first characters of all keywords in _sorted
+	_end = asorti(_tbl, _sorted)
+
 	out_line()
+	# Output the len data per first character
+	out_line(sprintf("static const kw_len_data kwlen[CHAR_TBL_SZ] = {", _end))
+	out_tabs()
 
-	_end = kw_longest()
-
-	# The table which tells you where the range of keywords with a particular
-	# length begins and how long it is.
-	out_line("static const kw_len_data kws_len[KW_LONG+1] = {")
-	tab_inc()
-	out_line("{0, 0}, // always empty; can't have keywords of length 0")
+	# Start index of words starting with a particular character in kws
+	_start = 0
+	# The number of words which start with a particular character
+	_len = 0
+	# Count of how many empty structs have been output so some formatting exists
+	_nout = 0
+	_pad = 8
 	
-	_jend = arr_len(G_keywords_sort_len_arr)
-	for (_i = 1; _i <= _end; ++_i) {
-		_len_start = 0
-		_len_len = 0
-		for (_j = 1; _j <= _jend; ++_j) {
-			unjoin(_arr, G_keywords_sort_len_arr[_j])
-			_kw_len = _arr[2]
-			if (_i == _kw_len) {
-				if (!_len_start) 
-					_len_start = _j
-				++_len_len
+	_end = CHR_TBL_END()
+	for (_i = 0; _i < _end; ++_i) {
+		_ch = n_to_ch(_i) 
+		if ((_ch in _tbl)) {
+			# Print the struct for a particular character and reset the counter
+			# for empty structs
+			_len = _tbl[_ch]
+
+			# Ugly 'make sure you don't output two new lines after each other'
+			if (_nout % _pad) {
+				out_line()
+				out_tabs()
+			}
+
+			printf("{%d, %d}, /* '%s' */", _start, _len, _ch)
+			out_line()
+			out_tabs()
+			_start += _len
+			_nout = 0
+		} else {
+			# Print at most _pad empty structs on a line
+			printf("{0, 0}, ")
+			++_nout
+			if ((_i+1 < _end) && !(_nout % _pad)) {
+				out_line()
+				out_tabs()
 			}
 		}
-
-		if (_len_start)
-			--_len_start
-			
-		out_line(sprintf("{%d, %d}, // %d", _len_start, _len_len, _i))
 	}
-	
-	tab_dec()
+	out_line()
 	out_line("};")
 }
 function out_bsrch_prereq() {
-	out_line("typedef struct str_tok {")
-	tab_inc()
-	out_line("const char * str;")
-	out_line(sprintf("%s tok;", N_TOK_ID()))
-	tab_dec()
-	out_line("} str_tok;")
 	out_line("static int compar(const void * a, const void * b)")
 	out_line("{")
 	tab_inc()
 	out_line("const char * key = (const char *)a;")
-	out_line("const str_tok * stb = (const str_tok *)b;")
-	out_line("return strcmp(key, stb->str);")
+	out_line("const char * str = *(const char **)b;")
+	out_line("return strcmp(key, str);")
 	tab_dec()
 	out_line("}")
 }
@@ -849,31 +873,37 @@ function out_kw_bsrch() {
 	out_line("{")
 	tab_inc()
 
-	out_kw_struct_arr()
+	out_kw_static_tbls()
 	out_line()
 	
 	out_line(sprintf("%s tok = base;", N_TOK_ID()))
 	out_line("const char * txt = lex->write_buff;")
+	out_line("byte first = (byte)*txt;")
+	out_line("uint start = kwlen[first].start;")
+	out_line("uint len = kwlen[first].len;")
 	out_line("uint txt_len = lex->write_buff_pos;")
-
+	
 	# Call bsearch() only if a keyword with length(input) exists and limit the
 	# search to the range of keywords with exactly that length.
-	
-	out_line(sprintf("if %s", KW_LEN_CHECK()))
-	out_line("{")
+	out_line()
+	out_line(sprintf("if (!(%s && len))", KW_LEN_CHECK()))
 	tab_inc()
-	out_line("str_tok * kw = (str_tok *)bsearch(txt,")
+	out_line("return tok;")
+	tab_dec()
+
+	out_line()
+	out_line("const char ** kw = (const char **)bsearch(txt,")
 	tab_inc()
-	out_line("kws+kws_len[txt_len].start,")
-	out_line("kws_len[txt_len].len,")
+	out_line("kws+start,")
+	out_line("len,")
 	out_line("sizeof(*kws),")
 	out_line("compar")
 	tab_dec()
 	out_line(");")
-	out_line("return ((!kw) ? tok : kw->tok);")
-	tab_dec()
-	out_line("}")
-	out_line("return tok;")
+
+	out_line()
+	out_line("return ((!kw) ? tok : tks[kw-kws]);")
+
 	tab_dec()
 	out_line("}")
 }
@@ -902,21 +932,21 @@ function out_kw_walk(tree, root, map_kw, n,    _next, _ch, _i, _end) {
 		out_line("}")
 	}
 }
-function out_kw_ifs(    _tree, _set_kw, _map_kw, _i, _end, _arr, _set_ch) {
+function out_kw_ifs(    _tree, _set_kw, _map_kw, _i, _end, _vect, _set_ch) {
 
 	# Find out if, and which, keyword the input is by literal if statements for
 	# each character.
 
-	arr_make_set(_set_kw, G_keywords_arr, 1)
-	map_from_arr(_map_kw, G_keywords_arr)
+	vect_make_set(_set_kw, G_keywords_vect, 1)
+	vect_to_map(_map_kw, G_keywords_vect)
 	ch_ptree_init(_tree)
 	
-	_end = arr_len(_set_kw)
+	_end = vect_len(_set_kw)
 	for (_i = 1; _i <= _end; ++_i) {
 		ch_ptree_insert(_tree, _set_kw[_i])
-		arr_push(_arr, str_ch_at(_set_kw[_i], 1))
+		vect_push(_vect, str_ch_at(_set_kw[_i], 1))
 	}
-	arr_make_set(_set_ch, _arr)
+	vect_make_set(_set_ch, _vect)
 
 	out_is_kw_head()
 	out_line("{")
@@ -926,7 +956,7 @@ function out_kw_ifs(    _tree, _set_kw, _map_kw, _i, _end, _arr, _set_ch) {
 	out_line()
 
 	# Do not proceed if there are no keywords with length(input)
-	out_line(sprintf("if (!%s)", KW_LEN_CHECK()))
+	out_line(sprintf("if (!(%s))", KW_LEN_CHECK()))
 	tab_inc()
 	out_line("return tok;")
 	tab_dec()
@@ -934,7 +964,7 @@ function out_kw_ifs(    _tree, _set_kw, _map_kw, _i, _end, _arr, _set_ch) {
 	out_line()
 	out_line("const char * ch = lex->write_buff;")
 	
-	_end = arr_len(_set_ch)
+	_end = vect_len(_set_ch)
 	# Generate one big if - else if tree for all keywords.
 	for (_i = 1; _i <= _end; ++_i)
 		out_kw_walk(_tree, _set_ch[_i], _map_kw, _i)
@@ -956,72 +986,42 @@ function out_kw_ifs(    _tree, _set_kw, _map_kw, _i, _end, _arr, _set_ch) {
 # </out_source>
 
 # <misc>
-function get_kw_lens(    _i, _end, _str, _arr, _j, _jend, _arr2, _arr3, _n) {
-
-	# Sorts all keywords by length and by value. I.e. all keywords of the same
-	# length appear next to each other in alphabetical order.
-
-	arr_init(_arr)
-
-	_end = arr_len(G_keywords_arr)
-	for (_i = 1; _i <= _end; ++_i) {
-		unjoin(_arr2, G_keywords_arr[_i])
-		_str = _arr2[1]
-		arr_push(_arr, join(_str, length(_str)))
-	}
-	
-	_end = kw_longest()
-	_jend = arr_len(_arr)
-	for (_i = 1; _i <= _end; ++_i) {
-		delete _arr3
-		_n = 0
-		for (_j = 1; _j <= _jend; ++_j) {
-			unjoin(_arr2, _arr[_j])
-			if (_i == _arr2[2])
-				_arr3[++_n] = _arr2[1]
-		}
-		
-		if (_n) {
-			asort(_arr3)
-			for (_j = 1; _j <= _n; ++_j)
-				arr_push(G_keywords_sort_len_arr, join(_arr3[_j], _i))
-		}
-	}
-
-	_end = arr_len(G_keywords_sort_len_arr)
-	unjoin(_arr2, G_keywords_sort_len_arr[_end])
-	if (_arr2[2] > KW_LEN_LIMIT()) {
-	
-		# We have a limit because an int bitmap is used to check if a keyword
-		# of a certain length exists.
-	
-		err_quit(sprintf("keyword length cannot be larger than %d",
-			KW_LEN_LIMIT()))
-	}
-}
 function generate() {
-	get_kw_lens()
 	out_header()
 	out_source()
 }
 function KW_BSEARCH() {return "bsearch"}
 function KW_IFS() {return "ifs"}
-function check_kw(str) {
+function check_kw_lookup_type(str) {
 	if (str != KW_BSEARCH() && str != KW_IFS()) {
 		err_quit(sprintf("Keywords has to be one of: %s, %s",
 			KW_BSEARCH(), KW_IFS()))
+	}
+}
+function kw_len_check(    _kw_set) {
+	vect_make_set(_kw_set, G_keywords_vect, 1)
+
+	_end = vect_len(_kw_set)
+	for (_i = 1; _i <= _end; ++_i) {
+		if (length(_kw_set[_i]) > KW_LEN_LIMIT()) {
+			# We have a limit because an int bitmap is used to check if a
+			# keyword of a certain length exists.
+	
+			err_quit(sprintf("keyword '%s': length cannot be greater than %d",
+				_kw_set[_i], KW_LEN_LIMIT()))
+		}
 	}
 }
 function npref(str) {return (npref_get() str)}
 function npref_set(str) {_B_npref = str}
 function npref_get() {return _B_npref}
 function npref_constants_all() {
-	npref_constants(G_char_tbl_arr, 2, npref_get())
-	npref_constants(G_symbols_arr, 2, npref_get())
-	npref_constants(G_keywords_arr, 2, npref_get())
-	npref_constants(G_patterns_arr, 2, npref_get())
-	npref_constants(G_actions_arr, 1, npref_get())
-	npref_constants(G_actions_arr, 2, npref_get())
+	npref_constants(G_char_tbl_vect, 2, npref_get())
+	npref_constants(G_symbols_vect, 2, npref_get())
+	npref_constants(G_keywords_vect, 2, npref_get())
+	npref_constants(G_patterns_vect, 2, npref_get())
+	npref_constants(G_actions_vect, 1, npref_get())
+	npref_constants(G_actions_vect, 2, npref_get())
 }
 
 function err_quit(msg) {
@@ -1058,26 +1058,25 @@ print sprintf("%s %s", SCRIPT_NAME(), SCRIPT_VERSION())
 function on_begin() {
 	lex_lib_is_included()
 	
-	arr_init(G_char_tbl_arr)
-	arr_init(G_symbols_arr)
-	arr_init(G_keywords_arr)
-	arr_init(G_patterns_arr)
-	arr_init(G_actions_arr)
-	arr_init(G_keywords_sort_len_arr)
+	vect_init(G_char_tbl_vect)
+	vect_init(G_symbols_vect)
+	vect_init(G_keywords_vect)
+	vect_init(G_patterns_vect)
+	vect_init(G_actions_vect)
 	
 	if (!Keywords)
 		Keywords = KW_BSEARCH()
-	check_kw(Keywords)
+	check_kw_lookup_type(Keywords)
 	set_kw_type(Keywords)
 	
 	npref_set(NamePrefix)
 }
-function on_char_tbl() {save_to(G_char_tbl_arr)}
-function on_symbols()  {save_to(G_symbols_arr)}
-function on_keywords() {save_to(G_keywords_arr)}
-function on_patterns() {save_to(G_patterns_arr)}
-function on_actions()  {save_to(G_actions_arr)}
-function on_end()      {npref_constants_all(); generate()}
+function on_char_tbl() {save_to(G_char_tbl_vect)}
+function on_symbols()  {save_to(G_symbols_vect)}
+function on_keywords() {save_to(G_keywords_vect)}
+function on_patterns() {save_to(G_patterns_vect)}
+function on_actions()  {save_to(G_actions_vect)}
+function on_end()      {kw_len_check(); npref_constants_all(); generate()}
 
 # Produce an error if lex_lib.awk is not included
 BEGIN {lex_lib_is_included()}

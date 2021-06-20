@@ -45,7 +45,7 @@ function save_char_tbl(    _i, _lo, _hi) {
 			while (_lo <= _hi) {
 				$1 = n_to_ch(_lo)
 
-				save_to(G_char_tbl_arr)
+				save_to(G_char_tbl_vect)
 				++_lo
 			}
 		} else {
@@ -53,7 +53,7 @@ function save_char_tbl(    _i, _lo, _hi) {
 				"must come before the second", $1))
 		}
 	} else {
-		save_to(G_char_tbl_arr)
+		save_to(G_char_tbl_vect)
 	}
 }
 
@@ -61,50 +61,50 @@ function err_quit(msg) {
 	error_quit(sprintf("%s, line %d: %s", FILENAME, FNR, msg), SCRIPT_NAME())
 }
 
-function out_arr(arr,    _i, _end, _unj) {
-	# Output the fields of an arr structure separated by a tab.
-	# See inc_lex_lib.awk on why arr structures are special.
+function out_vect(vect,    _i, _end, _unj) {
+	# Output the fields of an vect structure separated by a tab.
+	# See inc_lex_lib.awk on why vect structures are special.
 	
-	_end = arr_len(arr)
+	_end = vect_len(vect)
 	for (_i = 1; _i <= _end; ++_i) {
-		unjoin(_unj, arr[_i])
+		unjoin(_unj, vect[_i])
 		out_line(sprintf("%s\t%s", _unj[1], _unj[2]))
 	}
 }
 
-function out_table(label, arr) {
+function out_table(label, vect) {
 	# Called to print all tables after they are processed and ready for the next
 	# stage.
 	
 	out_line(label)
 	tab_inc()
-	out_arr(arr)
+	out_vect(vect)
 	tab_dec()
 	out_line(END_())
 }
 
-function symbols_to_ch_cls(    _set, _arr, _i, _end, _str, _ch_map, _ch, _n) {
+function symbols_to_ch_cls(    _set, _vect, _i, _end, _str, _ch_map, _ch, _n) {
 	# Generate char classes for the first characters of the symbols if any
 	# symbols exist. This is done only if said first characters is not already
 	# in the char table.
 
-	map_from_arr(_ch_map, G_char_tbl_arr)
-	arr_make_set(_set, G_symbols_arr)
-	_end = arr_len(_set)
+	vect_to_map(_ch_map, G_char_tbl_vect)
+	vect_make_set(_set, G_symbols_vect)
+	_end = vect_len(_set)
 
-	arr_init(_arr)
+	vect_init(_vect)
 	for (_i = 1; _i <= _end; ++_i) {
 		_str = _set[_i]
 		if (!is_constant(_str))
-			arr_push(_arr, str_ch_at(_str, 1))
+			vect_push(_vect, str_ch_at(_str, 1))
 	}
 	
-	arr_make_set(_set, _arr)
-	_end = arr_len(_set)
+	vect_make_set(_set, _vect)
+	_end = vect_len(_set)
 	for (_i = 1; _i <= _end; ++_i) {
 		_ch = _set[_i]
 		if (!(_ch in _ch_map)) {
-			arr_push(G_char_tbl_arr,
+			vect_push(G_char_tbl_vect,
 				join(_set[_i], sprintf(CH_CLS_AUTO_GEN(), ++_n)))
 		}
 	}
@@ -112,20 +112,20 @@ function symbols_to_ch_cls(    _set, _arr, _i, _end, _str, _ch_map, _ch, _n) {
 
 function generate() {
 	symbols_to_ch_cls()
-	out_table(CHAR_TBL(), G_char_tbl_arr)
-	out_table(SYMBOLS(),  G_symbols_arr)
-	out_table(KEYWORDS(), G_keywords_arr)
-	out_table(PATTERNS(), G_patterns_arr)
-	out_table(ACTIONS(),  G_actions_arr)
+	out_table(CHAR_TBL(), G_char_tbl_vect)
+	out_table(SYMBOLS(),  G_symbols_vect)
+	out_table(KEYWORDS(), G_keywords_vect)
+	out_table(PATTERNS(), G_patterns_vect)
+	out_table(ACTIONS(),  G_actions_vect)
 }
 
 function init() {
 	# User input is saved in these.
-	arr_init(G_char_tbl_arr)
-	arr_init(G_symbols_arr)
-	arr_init(G_keywords_arr)
-	arr_init(G_patterns_arr)
-	arr_init(G_actions_arr)
+	vect_init(G_char_tbl_vect)
+	vect_init(G_symbols_vect)
+	vect_init(G_keywords_vect)
+	vect_init(G_patterns_vect)
+	vect_init(G_actions_vect)
 
 	# Use as array, so awk knows they are not scalar. Used to determine if any
 	# characters/tokens/keywords etc. repeat.
@@ -146,10 +146,10 @@ function set_save_char_tbl() {
 	}
 }
 
-function set_save_to(set, arr) {
+function set_save_to(set, vect) {
 	if (!($1 in set)) {
 		set[$1] = 1
-		save_to(arr)
+		save_to(vect)
 	} else {
 		err_repeat()
 	}
@@ -172,10 +172,10 @@ print sprintf("%s %s", SCRIPT_NAME(), SCRIPT_VERSION())
 # Callbacks called from the main awk loop. See inc_lex_lib.awk
 function on_begin()    {init()}
 function on_char_tbl() {set_save_char_tbl()}
-function on_symbols()  {set_save_to(G_symbols_set, G_symbols_arr)}
-function on_keywords() {set_save_to(G_keywords_set, G_keywords_arr)}
-function on_patterns() {set_save_to(G_patterns_set, G_patterns_arr)}
-function on_actions()  {set_save_to(G_actions_set, G_actions_arr)}
+function on_symbols()  {set_save_to(G_symbols_set, G_symbols_vect)}
+function on_keywords() {set_save_to(G_keywords_set, G_keywords_vect)}
+function on_patterns() {set_save_to(G_patterns_set, G_patterns_vect)}
+function on_actions()  {set_save_to(G_actions_set, G_actions_vect)}
 function on_else()     {err_quit(sprintf("'%s' unknown", $0))}
 function on_end()      {generate()}
 # </misc>

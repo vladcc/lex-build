@@ -1,9 +1,9 @@
 # Common lex-build functionality
-# v1.01
+# v1.02
 
 # Author: Vladimir Dinev
 # vld.dinev@gmail.com
-# 2021-05-23
+# 2021-06-20
 
 # <ascii>
 # Generates a map of the ascii table. Used to turn characters into number and
@@ -32,60 +32,67 @@ function ch_to_n(ch) {return _B_ch_to_n[ch]}
 function n_to_ch(n) {return _B_n_to_ch[n]}
 # </ascii>
 
-# <arr>
+# <vect>
 # An array structure which knows its own length. Way more convenient than always
 # having to track it manually. How it is generally used throughout lex-builder
 # is the two input fields are joined like so (f1 SUBSEP f2) and that string is
-# pushed into the arr. This makes sure the order of the input is preserved. The
+# pushed into the vect. This makes sure the order of the input is preserved. The
 # fields have to be unjoined when you want to read them later.
 
 function LEN() {return "len"}
-function arr_init(arr) {arr[""] = ""; delete arr; arr[LEN()] = 0}
-function arr_len(arr) {return arr[LEN()]}
-function arr_push(arr, str) {arr[++arr[LEN()]] = str}
-function arr_get(arr, i) {return arr[i]}
-function arr_has(arr, what,    _i, _end) {
-	_end = arr_len(arr)
+function vect_init(vect) {vect[""] = ""; delete vect; vect[LEN()] = 0}
+function vect_len(vect) {return vect[LEN()]}
+function vect_push(vect, str) {vect[++vect[LEN()]] = str}
+function vect_get(vect, i) {return vect[i]}
+function vect_has(vect, what,    _i, _end) {
+	_end = vect_len(vect)
 	for (_i = 1; _i <= _end; ++_i) {
-		if (arr[_i] == what)
+		if (vect[_i] == what)
 			return 1
 	}
 	return 0
 }
-function arr_copy(arr_dest, arr_src,    _i, _end) {
-	arr_init(arr_dest)
-	_end = arr_len(arr_src)
+function vect_copy(vect_dest, vect_src,    _i, _end) {
+	vect_init(vect_dest)
+	_end = vect_len(vect_src)
 	for (_i = 1; _i <= _end; ++_i)
-		arr_push(arr_dest, arr_src[_i])
+		vect_push(vect_dest, vect_src[_i])
 }
-function arr_append(arr_dest, arr_src,    _i, _end) {
-	_end = arr_len(arr_src)
+function vect_append(vect_dest, vect_src,    _i, _end) {
+	_end = vect_len(vect_src)
 	for (_i = 1; _i <= _end; ++_i)
-		arr_push(arr_dest, arr_src[_i])
+		vect_push(vect_dest, vect_src[_i])
 }
-function arr_make_set(set_out, arr_in, fld,    _i, _end, _split) {
+function vect_make_set(set_out, vect_in, fld,    _i, _end, _split) {
 	if (!fld)
 		fld = 1
 	
-	arr_init(set_out)
-	_end = arr_len(arr_in)
+	vect_init(set_out)
+	_end = vect_len(vect_in)
 	for (_i = 1; _i <= _end; ++_i) {
-		unjoin(_split, arr_in[_i])
-		if (!arr_has(set_out, _split[fld]))
-			arr_push(set_out, _split[fld])
+		unjoin(_split, vect_in[_i])
+		if (!vect_has(set_out, _split[fld]))
+			vect_push(set_out, _split[fld])
 	}
+}
+function vect_to_array(arr_dest, vect_src,    _i, _end) {
+	_end = vect_len(vect_src)
+	delete arr_dest
+	for (_i = 1; _i <= _end; ++_i)
+		arr_dest[_i] = vect_src[_i]
+	return _end
 }
 function join(a, b) {return (a SUBSEP b)}
 function unjoin(arr_out, str) {return split(str, arr_out, SUBSEP)}
-function save_to(arr) {
+function save_to(vect) {
 	# Usually called from user handlers. Makes sure you don't save delimiters.
 	if (!is_range_word($0))
-		arr_push(arr, join($1, $2))
+		vect_push(vect, join($1, $2))
 }
-function map_from_arr(map_out, arr_in, field_ind, field_val,
+function vect_to_map(map_out, vect_in, field_ind, field_val,
     _i, _end, _arr) {
-	# Turn arr[1] = ("foo" SUBSEP "bar") into arr["foo"] = "bar", or
-	# arr["bar"] = "foo". Repeat for all items of arr.
+	# Turn vect[1] = ("foo" SUBSEP "bar") into vect["foo"] = "bar", or
+	# vect["bar"] = "foo". Repeat for all items of vect.
 
 	delete map_out
 	if (!field_ind) {
@@ -93,13 +100,13 @@ function map_from_arr(map_out, arr_in, field_ind, field_val,
 		field_val = 2
 	}
 	
-	_end = arr_len(arr_in)
+	_end = vect_len(vect_in)
 	for (_i = 1; _i <= _end; ++_i) {
-		unjoin(_arr, arr_in[_i])
+		unjoin(_arr, vect_in[_i])
 		map_out[_arr[field_ind]] = _arr[field_val] 
 	}
 }
-# </arr>
+# </vect>
 
 # <output>
 # Prints indentation in front of output. Great for printing source code.
@@ -250,8 +257,8 @@ function is_range_word(str) {
 	KEYWORDS() == str || PATTERNS() == str || ACTIONS() == str) 
 }
 
-function npref_constants(arr, ind, pref,    _i, _end, _arr, _str) {
-# Call this to prefix all constants saved in arr. Note that 'ind' is the index
+function npref_constants(vect, ind, pref,    _i, _end, _arr, _str) {
+# Call this to prefix all constants saved in vect. Note that 'ind' is the index
 # in the sub array, as per the usual save_to(), join(), unjoin() structure.
 
 	if (ind != 1 && ind != 2)
@@ -259,15 +266,15 @@ function npref_constants(arr, ind, pref,    _i, _end, _arr, _str) {
 
 	pref = toupper(pref)
 
-	_end = arr_len(arr)
+	_end = vect_len(vect)
 	for (_i = 1; _i <= _end; ++_i) {
-		_str = arr[_i]
+		_str = vect[_i]
 
 		unjoin(_arr, _str)
 		if (is_constant(_arr[ind]))
 			_arr[ind] = (pref _arr[ind])
 
-		arr[_i] = join(_arr[1], _arr[2])
+		vect[_i] = join(_arr[1], _arr[2])
 	}
 }
 
