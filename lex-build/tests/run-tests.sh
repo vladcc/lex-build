@@ -14,7 +14,7 @@ function run_tests_on_single_file
 	
 	for test in $G_TEST_CASES; do
 		L_INPUT="$(make_input_name $test)"
-		L_ACCEPT="$(make_accept_name $test)"	
+		L_ACCEPT="$(make_accept_name $test)"
 		eval_success "diff <($L_EXEC $L_INPUT) $L_ACCEPT"
 	done
 }
@@ -59,7 +59,7 @@ function clean_up { bt_eval c_clean; }
 # <awk>
 function awk_test_ver
 {
-	run_test_version_info "lex-awk.awk" "lex-awk.awk 1.2"
+	run_test_version_info "lex-awk.awk" "lex-awk.awk 1.3"
 }
 function awk_test_lex_lib_inc
 {

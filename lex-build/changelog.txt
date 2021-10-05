@@ -49,3 +49,9 @@
 
 	run-tests.sh:
 	c_test_kw_len added.
+
+2021-10-05
+	lex-awk.awk v1.2 -> v1.3
+	'if (_B_lex_peek_ch != "")' instead of 'if (_B_lex_peek_ch)' allows to
+	remove two '(var "")' conversions. gawk is about a second faster.
+	'abc0' test added to the base case tests.

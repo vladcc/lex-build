@@ -24,7 +24,7 @@ print what it reads.
 
 1. Intel
 
-Linux 5.4.0-73-generic
+Linux 5.4.0-84-generic
 Intel(R) Core(TM) i5-3320M CPU @ 2.60GHz
 
 --------------------------------------------------------------------------------
@@ -34,29 +34,28 @@ $ ls -lh ./big_file.txt | awk '{print $5,$NF}'
 # GNU Awk 5.0.1, API: 2.0 (GNU MPFR 4.0.2, GNU MP 6.2.0)
 $ time gawk -f ./awk/inc_lex.awk -f ./awk/lex.awk big_file.txt
 
-real    0m5.271s
-user    0m5.266s
-sys 0m0.004s
+real    0m4.919s
+user    0m4.918s
+sys 0m0.000s
 
 # mawk 1.3.4 20200120
 $ time mawk -f ./awk/inc_lex.awk -f ./awk/lex.awk big_file.txt
 
-real    0m2.558s
-user    0m2.541s
-sys 0m0.005s
+real    0m2.929s
+user    0m2.925s
+sys 0m0.004s
 
 # awk version 20121220
 $ time original-awk -f ./awk/inc_lex.awk -f ./awk/lex.awk big_file.txt
 
-real    0m13.325s
-user    0m13.294s
-sys 0m0.013s
+real    0m12.315s
+user    0m12.310s
+sys 0m0.004s
 --------------------------------------------------------------------------------
 Given that each character operation becomes a string operation and the amount of
 function calls and hash table look ups, gawk runs at a respectable less than a
-second per mb. mawk is twice as fast, which makes sense, since performance is
-the main focus in that implementation. original-awk is way behind, taking more
-than two seconds per mb.
+second per mb. mawk is quite a bit faster, and original-awk is way behind,
+taking more than two seconds per mb.
 
 2. ARM (Raspberry PI 3B)
 
@@ -70,25 +69,24 @@ $ ls -lh ./big_file.txt | awk '{print $5,$NF}'
 # GNU Awk 4.1.4, API: 1.1 (GNU MPFR 3.1.5, GNU MP 6.1.2)
 $ time gawk -f ./awk/inc_lex.awk -f ./awk/lex.awk big_file.txt
 
-real	0m39.716s
-user	0m39.693s
-sys	0m0.020s
+real	0m32.743s
+user	0m32.706s
+sys	0m0.030s
 
 # mawk 1.3.3 Nov 1996, Copyright (C) Michael D. Brennan
 $ time mawk -f ./awk/inc_lex.awk -f ./awk/lex.awk big_file.txt
 
-real	0m13.798s
-user	0m13.771s
+real	0m13.439s
+user	0m13.428s
 sys	0m0.010s
 
 # awk version 20121220
 $ time original-awk -f ./awk/inc_lex.awk -f ./awk/lex.awk big_file.txt
 
-real	1m58.143s
-user	1m58.075s
-sys	0m0.050s
+real	1m53.053s
+user	1m53.034s
+sys	0m0.010s
 --------------------------------------------------------------------------------
 The only bearable performance here is that of mawk with ~two seconds per mb - as
-much as original-awk on i5. gawk is three times slower than mawk, rather than
-two as it was on Intel, and original-awk is four time slower than gawk, rather
-than ~two.
+much as original-awk on i5. gawk is proportionately slower here in relation to
+mawk than on the i5, and original-awk, well... works.

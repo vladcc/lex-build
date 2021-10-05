@@ -2,7 +2,7 @@
 
 # Author: Vladimir Dinev
 # vld.dinev@gmail.com
-# 2021-06-07
+# 2021-10-05
 
 # Generates a lexer in awk. It determines the next token by branching on the
 # character class of the current input character, and then branches on the next
@@ -11,7 +11,7 @@
 
 # <script>
 function SCRIPT_NAME() {return "lex-awk.awk"}
-function SCRIPT_VERSION() {return "1.2"}
+function SCRIPT_VERSION() {return "1.3"}
 # </script>
 
 # <out_signature>
@@ -179,11 +179,11 @@ function out_lex_io() {
 	tab_inc()
 	out_line(sprintf("# Note: the user defines %s()", F_USR_GET_LINE()))
 	out_line()
-	out_line(sprintf("%s = (%s[%s++] \"\")",
+	out_line(sprintf("%s = %s[%s++]",
 		VAR_CURR_CH(), VAR_INPUT_LINE(), VAR_LINE_POS()))
-	out_line(sprintf("%s = (%s[%s] \"\")",
+	out_line(sprintf("%s = %s[%s]",
 		VAR_PEEK_CH(), VAR_INPUT_LINE(), VAR_LINE_POS()))
-	out_line(sprintf("if (%s)", VAR_PEEK_CH()))
+	out_line(sprintf("if (%s != \"\")", VAR_PEEK_CH()))
 	tab_inc()
 	out_line(sprintf("return %s", VAR_CURR_CH()))
 	tab_dec()
