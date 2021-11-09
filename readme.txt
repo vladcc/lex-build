@@ -1,3 +1,8 @@
+!!!NOTE!!! This project has moved to:
+https://github.com/vladcc/shawk/tree/main/shawk/awk/lex-build
+
+
+
 lex-build - a tokenizer generator
 
 Generates human readable lexers. Has a front end and back ends for different
